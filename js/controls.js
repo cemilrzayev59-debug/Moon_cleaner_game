@@ -79,13 +79,8 @@ export function setupControls() {
     inputState.cameraYaw -= dx * 0.01;
     inputState.cameraPitch -= dy * 0.01;
     
-    // Kameranın tam yuxarı və aşağı baxması üçün limitləri tətbiq edirik
-    if (inputState.cameraPitch > CONFIG.PITCH_MAX) {
-      inputState.cameraPitch = CONFIG.PITCH_MAX;
-    }
-    if (inputState.cameraPitch < CONFIG.PITCH_MIN) {
-      inputState.cameraPitch = CONFIG.PITCH_MIN;
-    }
+    if (inputState.cameraPitch > CONFIG.PITCH_MAX) { inputState.cameraPitch = CONFIG.PITCH_MAX; }
+    if (inputState.cameraPitch < CONFIG.PITCH_MIN) { inputState.cameraPitch = CONFIG.PITCH_MIN; }
   });
 
   function endCam(e) {
@@ -95,12 +90,15 @@ export function setupControls() {
   camArea.addEventListener('pointerup', endCam);
   camArea.addEventListener('pointercancel', endCam);
 
+  // Düyməni basıb tutanda problemsiz işləməsi üçün preventDefault əlavə edildi
   actionBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); 
     actionBtn.setPointerCapture(e.pointerId);
     inputState.actionPressed = true;
   });
   
-  actionBtn.addEventListener('pointerup', () => {
+  actionBtn.addEventListener('pointerup', (e) => {
+    e.preventDefault();
     inputState.actionPressed = false;
   });
   
