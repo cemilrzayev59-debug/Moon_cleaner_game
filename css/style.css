@@ -34,6 +34,6 @@ html, body {
   background: rgba(80, 200, 120, 0.85); border: 3px solid rgba(255, 255, 255, 0.6);
   color: #fff; font-size: 40px; line-height: 1; z-index: 20;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); touch-action: none; cursor: pointer;
-  -webkit-touch-callout: none; /* Basıb tutanda menyunu bloklayır */
+  -webkit-touch-callout: none;
 }
 #action-btn:active { transform: scale(0.94); background: rgba(60, 180, 100, 0.95); }
