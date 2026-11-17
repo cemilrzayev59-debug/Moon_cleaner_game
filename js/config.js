@@ -7,7 +7,7 @@ export const CONFIG = {
 
   // Kamera (Birinci şəxs)
   CAMERA_HEIGHT: 1.8,       
-  PITCH_MIN: -0.8,          // Aşağı baxış limiti
+  PITCH_MIN: -0.8,          // Aşağı baxış limitiuuu
   PITCH_MAX: 0.6,           // Yuxarı baxış limiti
 
   // Toz sistemi və Fırça
