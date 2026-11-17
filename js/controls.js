@@ -76,11 +76,12 @@ export function setupControls() {
     camLastX = e.clientX;
     camLastY = e.clientY;
     
-    inputState.cameraYaw += dx * 0.005; // Hərəkət istiqaməti
-    inputState.cameraPitch += dy * 0.005;
+    inputState.cameraYaw += dx * 0.005; 
+    // DÜZƏLİŞ: + yerinə - yazdıq ki, barmaq aşağı çəkəndə kamera aşağı baxsın
+    inputState.cameraPitch -= dy * 0.005; 
     
-    if (inputState.cameraPitch > 1.5) { inputState.cameraPitch = 1.5; }
-    if (inputState.cameraPitch < -1.5) { inputState.cameraPitch = -1.5; }
+    if (inputState.cameraPitch > CONFIG.PITCH_LIMIT) { inputState.cameraPitch = CONFIG.PITCH_LIMIT; }
+    if (inputState.cameraPitch < -CONFIG.PITCH_LIMIT) { inputState.cameraPitch = -CONFIG.PITCH_LIMIT; }
   });
 
   function endCam(e) {
