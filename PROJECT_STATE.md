@@ -1,16 +1,16 @@
 # PROJECT_STATE
 
-## İndiki versiya: v0.1
+## İndiki versiya: v0.3
 
 ## Hazır funksiyalar
-- 3D Ay səthi, kraterlər, ulduzlar, Yer
-- Astronavt modeli + diş fırçası
-- Virtual joystick ilə hərəkət (mobil + masaüstü)
+- 3D Ay səthi, ulduzlar, Yer
+- Birinci şəxs (First-Person) kamera
+- Fırça modeli kameranın sağ aşağı küncündə
+- Virtual joystick ilə hərəkət
 - Sağ tərəf sürüşdürmə ilə kamera fırlanması
-- Kamera oyunçunu izləyir
-- HUD: pul və çanta (hələ 0)
-- Versiya göstəricisi (v0.1)
-- save.js hazırdır (hələ istifadə olunmur)
+- Toz sistemi: fırça ilə yaxınlıqdakı tozu təmizləyir və çantaya yığır
+- HUD: pul və çanta
+- Versiya göstəricisi (v0.3)
 
 ## Məlum xətalar
 - Heç biri
@@ -18,9 +18,7 @@
 ## Fayl siyahısı
 - index.html, css/style.css
 - js/main.js, js/config.js, js/state.js, js/world.js
-- js/player.js, js/controls.js, js/ui.js, js/save.js
+- js/player.js, js/controls.js, js/ui.js, js/save.js, js/dust.js
 
-## Növbəti addım (v0.2)
-- Toz sistemi: görünən toz ləkələri
-- "Təmizlə" düyməsi işləyəcək
-- js/dust.js faylı yaradılacaq
+## Növbəti addım (v0.4)
+- Satış məntəqəsi və pul qazanmaq
