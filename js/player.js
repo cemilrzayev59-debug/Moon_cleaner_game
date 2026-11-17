@@ -19,9 +19,10 @@ export function createPlayer(camera) {
   bristles.position.y = -0.25;
   brushGroup.add(bristles);
 
-  brushGroup.position.set(0.4, -0.4, -0.8); 
+  // Fırçanı ekranın alt mərkəzinə yaxınlaşdırdıq
+  brushGroup.position.set(0.3, -0.4, -0.7); 
   brushGroup.rotation.x = 0.5;
-  brushGroup.rotation.z = -0.3;
+  brushGroup.rotation.z = -0.2;
   
   camera.add(brushGroup);
   
@@ -50,30 +51,13 @@ export function updatePlayer(player, input, cameraYaw, dt, isBrushing, brushGrou
   const nz = moveZ / mag;
   const speed = Math.min(mag, 1);
 
-  // Kürə üzərində hərəkət (X və Z dəyişir)
   player.position.x += nx * CONFIG.PLAYER_SPEED * speed * dt;
   player.position.z += nz * CONFIG.PLAYER_SPEED * speed * dt;
 
-  const dx = player.position.x;
-  const dz = player.position.z;
-  const distSq = dx * dx + dz * dz;
-  const maxDist = CONFIG.MOON_RADIUS * 0.95;
-
-  // Əgər kürədən kənara çıxırsa, saxla
-  if (Math.sqrt(distSq) > maxDist) {
-    player.position.x = (dx / Math.sqrt(distSq)) * maxDist;
-    player.position.z = (dz / Math.sqrt(distSq)) * maxDist;
-  }
-
-  // Kürə səthinə uyğun olaraq Y koordinatını hesablayırıq
-  const finalX = player.position.x;
-  const finalZ = player.position.z;
-  player.position.y = Math.sqrt(CONFIG.MOON_RADIUS * CONFIG.MOON_RADIUS - finalX * finalX - finalZ * finalZ) - CONFIG.MOON_RADIUS;
-}
-
-// Fırçanın real dünya koordinatını tapırıq
-export function getBrushWorldPosition(brushGroup) {
-  const vec = new THREE.Vector3();
-  brushGroup.getWorldPosition(vec);
-  return vec;
+  // Düz səthin sərhədləri (kənara çıxmasın)
+  const halfSize = CONFIG.SURFACE_SIZE / 2 - 2;
+  if (player.position.x > halfSize) { player.position.x = halfSize; }
+  if (player.position.x < -halfSize) { player.position.x = -halfSize; }
+  if (player.position.z > halfSize) { player.position.z = halfSize; }
+  if (player.position.z < -halfSize) { player.position.z = -halfSize; }
 }
