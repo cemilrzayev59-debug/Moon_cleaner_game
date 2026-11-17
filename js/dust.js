@@ -20,7 +20,8 @@ export function createDustSystem(scene) {
   });
   
   const dustMesh = new THREE.Mesh(geo, mat);
-  dustMesh.position.y = -CONFIG.MOON_RADIUS;
+  // DÜZƏLİŞ: Ay mərkəzdə olduğu üçün toz da mərkəzdə olmalıdır
+  dustMesh.position.set(0, 0, 0); 
   scene.add(dustMesh);
 
   return { canvas, ctx, texture, dustMesh };
@@ -37,14 +38,8 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   const canvasY = (1 - uv.y) * canvas.height;
 
   const baseSize = CONFIG.BRUSH_SIZE;
-
-  // QÜTBLƏRDƏ DARTILMANI TARAZLAŞDIRIRIQ
-  // v = 1 - uv.y (0-dan 1-ə qədər)
   const v = 1 - uv.y;
-  // sin(v * PI) qütblərdə 0-a yaxınlaşır, ekvatorda 1 olur
   const sinTheta = Math.sin(v * Math.PI);
-  
-  // Fırçanın enini qütblərdə daha geniş edirik ki, 3D-də eyni görünsün
   const widthFactor = 1.0 / Math.max(sinTheta, 0.05); 
   
   const brushWidth = baseSize * widthFactor;
