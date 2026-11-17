@@ -8,13 +8,13 @@ export function createDustSystem(scene) {
   canvas.height = CONFIG.CANVAS_SIZE;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-  // Ay səthinin toz rəngi
+  // Tozun rəngi
   ctx.fillStyle = '#888888'; 
   ctx.fillRect(0, 0, CONFIG.CANVAS_SIZE, CONFIG.CANVAS_SIZE);
 
-  // İncə dənəvər Ay tozu (regolith) toxuması
-  for (let i = 0; i < 60000; i++) {
-    const shade = Math.floor(Math.random() * 60) + 100;
+  // İncə dənəvər toz toxuması
+  for (let i = 0; i < 40000; i++) {
+    const shade = Math.floor(Math.random() * 50) + 110;
     ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
     const x = Math.random() * CONFIG.CANVAS_SIZE;
     const y = Math.random() * CONFIG.CANVAS_SIZE;
@@ -26,22 +26,36 @@ export function createDustSystem(scene) {
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(CONFIG.PLANE_SIZE / CONFIG.SURFACE_SIZE, CONFIG.PLANE_SIZE / CONFIG.SURFACE_SIZE);
   
-  // Səth tamamilə DÜZ qalır, həndəsə əyilmir!
-  const geo = new THREE.PlaneGeometry(CONFIG.PLANE_SIZE, CONFIG.PLANE_SIZE);
+  // Yer tamamilə düzdür, toz isə real fiziki qalınlığı olan nazik 3D lövhədir (BoxGeometry)
+  const slabHeight = 0.12; // Toz qatının real 3D qalınlığı
+  const geo = new THREE.BoxGeometry(CONFIG.PLANE_SIZE, slabHeight, CONFIG.PLANE_SIZE);
   
-  // Bump map ilə işıq altında real 3D qabarıqlıq effekti (həndəsəni əymədən)
-  const mat = new THREE.MeshStandardMaterial({ 
+  // Üst səth (silinən toz teksturası)
+  const topMat = new THREE.MeshStandardMaterial({ 
     map: texture, 
     transparent: true,
     roughness: 0.9,
     bumpMap: texture,      
-    bumpScale: 0.15,       // İşıq və kölgə ilə həqiqi 3D toxuma effekti
-    depthWrite: false      
+    bumpScale: 0.08,       
+    depthWrite: true      
   });
+
+  // Toz qatının yan divarları və altı üçün rəng
+  const sideMat = new THREE.MeshStandardMaterial({
+    color: 0x777777,
+    roughness: 1.0
+  });
+
+  // 6 üz üçün materiallar: [sağ, sol, üst, alt, ön, arxa]
+  const materials = [
+    sideMat, sideMat,
+    topMat,  sideMat,
+    sideMat, sideMat
+  ];
   
-  const dustMesh = new THREE.Mesh(geo, mat);
-  dustMesh.rotation.x = -Math.PI / 2;
-  dustMesh.position.y = 0.03; // Yerin üzərində düz səth kimi oturur
+  const dustMesh = new THREE.Mesh(geo, materials);
+  // Qutunun alt hissəsi yerə dəyməsi üçün hündürlüyün yarısı qədər yuxarı qaldırırıq
+  dustMesh.position.y = slabHeight / 2; 
   scene.add(dustMesh);
 
   return { canvas, ctx, texture, dustMesh };
