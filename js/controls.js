@@ -17,7 +17,6 @@ export function setupControls() {
   let camPointerId = null;
   let camLastX = 0;
 
-  // ---- Joystick ----
   function updateJoystick(e) {
     const rect = joyBase.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
@@ -61,7 +60,6 @@ export function setupControls() {
   joyBase.addEventListener('pointerup', endJoy);
   joyBase.addEventListener('pointercancel', endJoy);
 
-  // ---- Kamera ----
   camArea.addEventListener('pointerdown', (e) => {
     if (camPointerId !== null) { return; }
     camPointerId = e.pointerId;
@@ -83,10 +81,8 @@ export function setupControls() {
   camArea.addEventListener('pointerup', endCam);
   camArea.addEventListener('pointercancel', endCam);
 
-  // ---- Təmizlə düyməsi (DÜZƏLİŞ: preventDefault və pointerCapture) ----
   actionBtn.addEventListener('pointerdown', (e) => {
-    // preventDefault() sildik, çünki bəzi brauzerlərdə düyməni blok edir
-    actionBtn.setPointerCapture(e.pointerId); // Barmaq düymədən sürüşsə belə, basılı saysın
+    actionBtn.setPointerCapture(e.pointerId);
     inputState.actionPressed = true;
   });
   
