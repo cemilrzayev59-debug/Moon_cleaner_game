@@ -13,7 +13,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500);
+// Far (uzaqlıq) artırıldı ki, böyük kürə görünsün
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
 camera.rotation.order = 'YXZ'; 
 
 const { scene } = createWorld();
@@ -34,11 +35,13 @@ window.addEventListener('resize', () => {
 });
 
 function updateCamera() {
+  // Kamera oyunçunun üstündə, amma kürənin əyriliyinə uyğun
   camera.position.set(
     player.position.x,
     player.position.y + CONFIG.CAMERA_HEIGHT,
     player.position.z
   );
+  
   camera.rotation.set(inputState.cameraPitch, inputState.cameraYaw, 0);
 }
 
@@ -52,7 +55,6 @@ function animate() {
   
   const brushPos = getBrushWorldPosition(brushGroup);
   
-  // dt parametrini ötürürük
   updateDustSystem(dustSystem, brushPos, inputState.actionPressed, dt);
   
   updateCamera();
