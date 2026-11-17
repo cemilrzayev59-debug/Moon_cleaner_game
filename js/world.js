@@ -19,16 +19,12 @@ export function createWorld() {
   }
   const starGeo = new THREE.BufferGeometry();
   starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const starMat = new THREE.PointsMaterial({
-    color: 0xffffff, size: 1.5, sizeAttenuation: false,
-  });
+  const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, sizeAttenuation: false });
   scene.add(new THREE.Points(starGeo, starMat));
 
   // ---- Ay səthi ----
   const groundGeo = new THREE.CircleGeometry(CONFIG.MOON_RADIUS, 64);
-  const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x9a9a9a, flatShading: true,
-  });
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, flatShading: true });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
@@ -37,9 +33,7 @@ export function createWorld() {
   for (let i = 0; i < 25; i++) {
     const r = 1 + Math.random() * 3;
     const craterGeo = new THREE.CircleGeometry(r, 16);
-    const craterMat = new THREE.MeshStandardMaterial({
-      color: 0x6a6a6a, flatShading: true,
-    });
+    const craterMat = new THREE.MeshStandardMaterial({ color: 0x6a6a6a, flatShading: true });
     const crater = new THREE.Mesh(craterGeo, craterMat);
     const angle = Math.random() * Math.PI * 2;
     const dist = 5 + Math.random() * (CONFIG.MOON_RADIUS - 10);
@@ -48,11 +42,9 @@ export function createWorld() {
     scene.add(crater);
   }
 
-  // ---- Yer (uzaqda) ----
+  // ---- Yer ----
   const earthGeo = new THREE.SphereGeometry(15, 16, 12);
-  const earthMat = new THREE.MeshStandardMaterial({
-    color: 0x3388ff, emissive: 0x114488, flatShading: true,
-  });
+  const earthMat = new THREE.MeshStandardMaterial({ color: 0x3388ff, emissive: 0x114488, flatShading: true });
   const earth = new THREE.Mesh(earthGeo, earthMat);
   earth.position.set(80, 50, -120);
   scene.add(earth);
