@@ -20,7 +20,6 @@ export function createDustSystem(scene) {
   });
   
   const dustMesh = new THREE.Mesh(geo, mat);
-  // DÜZƏLİŞ: Ay mərkəzdə olduğu üçün toz da mərkəzdə olmalıdır
   dustMesh.position.set(0, 0, 0); 
   scene.add(dustMesh);
 
@@ -40,7 +39,8 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   const baseSize = CONFIG.BRUSH_SIZE;
   const v = 1 - uv.y;
   const sinTheta = Math.sin(v * Math.PI);
-  const widthFactor = 1.0 / Math.max(sinTheta, 0.05); 
+  // Qütb kompensasiyası: maksimum 2.5 dəfə genişləndiririk
+  const widthFactor = Math.min(2.5, 1.0 / Math.max(sinTheta, 0.4));
   
   const brushWidth = baseSize * widthFactor;
   const brushHeight = baseSize;
