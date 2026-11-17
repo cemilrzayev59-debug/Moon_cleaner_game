@@ -21,24 +21,12 @@ export function createWorld() {
   const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false });
   scene.add(new THREE.Points(starGeo, starMat));
 
-  // ---- Düz Ay Səthi (2000x2000) ----
-  const groundGeo = new THREE.PlaneGeometry(CONFIG.SURFACE_SIZE, CONFIG.SURFACE_SIZE);
+  // ---- Düz Ay Səthi (Böyük Kvadrat) ----
+  const groundGeo = new THREE.PlaneGeometry(CONFIG.PLANE_SIZE, CONFIG.PLANE_SIZE);
   const groundMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
-
-  // ---- Yanlardakı Dağlar (Vizual effekt üçün) ----
-  const mountainMat = new THREE.MeshBasicMaterial({ color: 0x888888 });
-  for (let i = 0; i < 40; i++) {
-    const mountainGeo = new THREE.ConeGeometry(30, 80, 8);
-    const mountain = new THREE.Mesh(mountainGeo, mountainMat);
-    // Səthin kənarlarına yerləşdiririk
-    const angle = Math.random() * Math.PI * 2;
-    const dist = CONFIG.SURFACE_SIZE * 0.45;
-    mountain.position.set(Math.cos(angle) * dist, 40, Math.sin(angle) * dist);
-    scene.add(mountain);
-  }
 
   // ---- Yer ----
   const earthGeo = new THREE.SphereGeometry(30, 16, 12);
