@@ -22,7 +22,6 @@ scene.add(camera);
 const { player, brushGroup } = createPlayer(camera);
 scene.add(player);
 
-// Yeni toz sistemini qur
 const dustSystem = createDustSystem(scene);
 
 setupControls();
@@ -51,11 +50,10 @@ function animate() {
 
   updatePlayer(player, inputState.joystick, inputState.cameraYaw, dt, inputState.actionPressed, brushGroup);
   
-  // Fırçanın real dünya koordinatını alırıq
   const brushPos = getBrushWorldPosition(brushGroup);
   
-  // Təmizləmə (Silgi effekti)
-  updateDustSystem(dustSystem, brushPos, inputState.actionPressed);
+  // dt parametrini ötürürük
+  updateDustSystem(dustSystem, brushPos, inputState.actionPressed, dt);
   
   updateCamera();
   updateHUD();
