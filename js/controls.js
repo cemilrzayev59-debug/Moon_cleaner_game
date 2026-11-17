@@ -83,15 +83,17 @@ export function setupControls() {
   camArea.addEventListener('pointerup', endCam);
   camArea.addEventListener('pointercancel', endCam);
 
-  // ---- Təmizlə düyməsi ----
+  // ---- Təmizlə düyməsi (DÜZƏLİŞ: preventDefault və pointerCapture) ----
   actionBtn.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
+    // preventDefault() sildik, çünki bəzi brauzerlərdə düyməni blok edir
+    actionBtn.setPointerCapture(e.pointerId); // Barmaq düymədən sürüşsə belə, basılı saysın
     inputState.actionPressed = true;
   });
+  
   actionBtn.addEventListener('pointerup', (e) => {
-    e.preventDefault();
     inputState.actionPressed = false;
   });
+  
   actionBtn.addEventListener('pointercancel', () => {
     inputState.actionPressed = false;
   });
