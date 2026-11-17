@@ -13,15 +13,15 @@ export function createPlayer(camera) {
   brushGroup.add(handle);
 
   const bristles = new THREE.Mesh(
-    new THREE.BoxGeometry(0.25, 0.1, 0.35),
+    new THREE.BoxGeometry(0.3, 0.1, 0.4),
     new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true })
   );
   bristles.position.y = -0.25;
   brushGroup.add(bristles);
 
-  brushGroup.position.set(0.3, -0.35, -0.6); 
-  brushGroup.rotation.x = 0.3;
-  brushGroup.rotation.z = -0.2;
+  brushGroup.position.set(0.4, -0.4, -0.8); 
+  brushGroup.rotation.x = 0.5;
+  brushGroup.rotation.z = -0.3;
   
   camera.add(brushGroup);
   
@@ -29,13 +29,12 @@ export function createPlayer(camera) {
 }
 
 export function updatePlayer(player, input, cameraYaw, dt, isBrushing, brushGroup) {
-  // Fırçanın aşağı enməsi
   if (isBrushing) {
-    brushGroup.position.y = -0.55; 
-    brushGroup.rotation.x = 0.8;  
+    brushGroup.position.y = -0.6; 
+    brushGroup.rotation.x = 1.0;  
   } else {
-    brushGroup.position.y = -0.35; 
-    brushGroup.rotation.x = 0.3;
+    brushGroup.position.y = -0.4; 
+    brushGroup.rotation.x = 0.5;
   }
 
   const sinY = Math.sin(cameraYaw);
@@ -51,23 +50,30 @@ export function updatePlayer(player, input, cameraYaw, dt, isBrushing, brushGrou
   const nz = moveZ / mag;
   const speed = Math.min(mag, 1);
 
+  // Kürə üzərində hərəkət (X və Z dəyişir)
   player.position.x += nx * CONFIG.PLAYER_SPEED * speed * dt;
   player.position.z += nz * CONFIG.PLAYER_SPEED * speed * dt;
 
   const dx = player.position.x;
   const dz = player.position.z;
-  const dist = Math.sqrt(dx * dx + dz * dz);
-  const maxDist = CONFIG.MOON_RADIUS - 2;
-  if (dist > maxDist) {
-    player.position.x = (dx / dist) * maxDist;
-    player.position.z = (dz / dist) * maxDist;
+  const distSq = dx * dx + dz * dz;
+  const maxDist = CONFIG.MOON_RADIUS * 0.95;
+
+  // Əgər kürədən kənara çıxırsa, saxla
+  if (Math.sqrt(distSq) > maxDist) {
+    player.position.x = (dx / Math.sqrt(distSq)) * maxDist;
+    player.position.z = (dz / Math.sqrt(distSq)) * maxDist;
   }
+
+  // Kürə səthinə uyğun olaraq Y koordinatını hesablayırıq
+  const finalX = player.position.x;
+  const finalZ = player.position.z;
+  player.position.y = Math.sqrt(CONFIG.MOON_RADIUS * CONFIG.MOON_RADIUS - finalX * finalX - finalZ * finalZ) - CONFIG.MOON_RADIUS;
 }
 
-// YENİ: Fırçanın dünyadakı real koordinatını tapırıq
+// Fırçanın real dünya koordinatını tapırıq
 export function getBrushWorldPosition(brushGroup) {
   const vec = new THREE.Vector3();
   brushGroup.getWorldPosition(vec);
-  vec.y = 0.03; // Y oxunu yerə endiririk
   return vec;
 }
