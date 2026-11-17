@@ -1,5 +1,5 @@
 export const CONFIG = {
-  VERSION: 'v0.4.2',
+  VERSION: 'v0.4.3',
   MOON_RADIUS: 60,
   PLAYER_SPEED: 6,          
   JOYSTICK_RADIUS: 50,      
@@ -11,9 +11,9 @@ export const CONFIG = {
 
   CANVAS_SIZE: 1024,        
   
-  // Fırça artıq dairə deyil, kiçik kvadratdır.
-  BRUSH_SIZE: 10,           // Kvadratın ölçüsü (10x10 piksel - çox kiçikdir)
+  // Fırça ölçüsü (6x6 piksel - çox kiçik)
+  BRUSH_SIZE: 6,           
   
-  // Çanta dolma sürəti (saniyədə 40 vahid - təxminən 2.5 saniyəyə dolur)
-  DUST_YIELD: 40,           
+  // Hər silinən piksel üçün çantaya düşən toz (balans üçün)
+  DUST_YIELD: 0.04,           
 };
