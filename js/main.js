@@ -5,7 +5,7 @@ import { createWorld } from './world.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { setupControls, inputState } from './controls.js';
 import { updateHUD } from './ui.js';
-import { createDustSystem, updateDustSystem } from './dust.js'; // YENİ
+import { createDustSystem, updateDustSystem } from './dust.js';
 
 const container = document.getElementById('game-container');
 
@@ -50,9 +50,14 @@ function animate() {
   // Toz sistemini yenilə
   updateDustSystem(dustSystem, player.position, inputState.actionPressed, dt);
   
-  updateCamera();
+  // Düymə basılıbsa fırçanı bir az yellə (vizual effekt)
+  if (inputState.actionPressed) {
+    player.rotation.z = Math.sin(Date.now() * 0.02) * 0.1;
+  } else {
+    player.rotation.z = 0;
+  }
   
-  // Hər kadrda HUD-u yenilə (çanta dolanda görünsün)
+  updateCamera();
   updateHUD();
 
   renderer.render(scene, camera);
