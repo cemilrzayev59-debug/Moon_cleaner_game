@@ -42,7 +42,7 @@ export function createWorld() {
     scene.add(crater);
   }
 
-  // ---- Yer ----
+  // ---- Yer ---
   const earthGeo = new THREE.SphereGeometry(15, 16, 12);
   const earthMat = new THREE.MeshStandardMaterial({ color: 0x3388ff, emissive: 0x114488, flatShading: true });
   const earth = new THREE.Mesh(earthGeo, earthMat);
