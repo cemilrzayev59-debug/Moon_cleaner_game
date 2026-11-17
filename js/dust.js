@@ -13,7 +13,13 @@ export function createDustSystem(scene) {
 
   const texture = new THREE.CanvasTexture(canvas);
   
-  const geo = new THREE.PlaneGeometry(CONFIG.SURFACE_SIZE, CONFIG.SURFACE_SIZE);
+  // TEXTURE-Nİ TƏKRARLANAN EDİRİK (Sonsuz Kürə effekti üçün)
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  // 2000x2000 sahədə 1024-lük kətanı 10 dəfə təkrarlayırıq
+  texture.repeat.set(CONFIG.PLANE_SIZE / CONFIG.SURFACE_SIZE, CONFIG.PLANE_SIZE / CONFIG.SURFACE_SIZE);
+  
+  const geo = new THREE.PlaneGeometry(CONFIG.PLANE_SIZE, CONFIG.PLANE_SIZE);
   const mat = new THREE.MeshBasicMaterial({ 
     map: texture, 
     transparent: true
@@ -34,8 +40,14 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
 
   const { ctx, texture, canvas } = dustSystem;
   
-  const canvasX = uv.x * canvas.width;
-  const canvasY = (1 - uv.y) * canvas.height;
+  // UV koordinatlarını (0-1) kətanın lokal ölçüsünə çeviririk (0-1024)
+  // Çünki şəkil 10 dəfə təkrarlanır, 1 vahid = 1/10
+  const repeatFactor = CONFIG.PLANE_SIZE / CONFIG.SURFACE_SIZE; // 10
+  const localU = (uv.x * repeatFactor) % 1.0;
+  const localV = ((1 - uv.y) * repeatFactor) % 1.0;
+
+  const canvasX = localU * canvas.width;
+  const canvasY = localV * canvas.height;
 
   const size = CONFIG.BRUSH_SIZE;
 
@@ -52,11 +64,22 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   }
 
   if (silinenTozSayi > 0) {
-    tozToplA(CONFIG.DUST_YIELD * dt * 60);
+    tozToplA(silinenTozSayi * CONFIG.DUST_YIELD);
   }
 
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillRect(startX, startY, size, size);
+  ctx.fillStyle = 'black';
+
+  // Kənarlarda kəsilməməsi üçün 3 yerdə (mərkəz, sol, sağ) silirik
+  const drawSquare = (x, y) => {
+    ctx.fillRect(x - size / 2, y - size / 2, size, size);
+  };
+
+  drawSquare(canvasX, canvasY);
+  drawSquare(canvasX - canvas.width, canvasY);
+  drawSquare(canvasX + canvas.width, canvasY);
+  drawSquare(canvasX, canvasY - canvas.height);
+  drawSquare(canvasX, canvasY + canvas.height);
   
   texture.needsUpdate = true;
 }
