@@ -6,58 +6,52 @@ export function createDustSystem(scene) {
   const canvas = document.createElement('canvas');
   canvas.width = CONFIG.CANVAS_SIZE;
   canvas.height = CONFIG.CANVAS_SIZE;
-  const ctx = canvas.getContext('2d');
+  // willReadFrequently əlavə edildi (performans üçün)
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
   ctx.fillStyle = '#2a2a2a'; 
   ctx.fillRect(0, 0, CONFIG.CANVAS_SIZE, CONFIG.CANVAS_SIZE);
 
   const texture = new THREE.CanvasTexture(canvas);
   
-  // Toz kürəsi (Ay səthindən bir az böyük)
   const geo = new THREE.SphereGeometry(CONFIG.MOON_RADIUS + 0.1, 64, 64);
-  const mat = new THREE.MeshStandardMaterial({ 
-    map: texture, transparent: true, roughness: 0.9
+  // MeshBasicMaterial edildi ki, işıq ona təsir etməsin
+  const mat = new THREE.MeshBasicMaterial({ 
+    map: texture, 
+    transparent: true
   });
   
   const dustMesh = new THREE.Mesh(geo, mat);
   dustMesh.position.y = -CONFIG.MOON_RADIUS;
   scene.add(dustMesh);
 
-  return { canvas, ctx, texture };
+  // dustMesh-i qaytarırıq ki, Raycaster onu tapa bilsin
+  return { canvas, ctx, texture, dustMesh };
 }
 
-export function updateDustSystem(dustSystem, brushPos, isBrushing, dt) {
+// YENİLƏNDİ: Artıq riyaziyyat yoxdur, birbaşa UV koordinatı gəlir
+export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   if (!isBrushing) {
     return;
   }
 
-  // YENİ: Əgər çanta doludursa, təmizləməni dayandır
   if (GameState.bag >= GameState.bagCapacity) {
     return;
   }
 
   const { ctx, texture, canvas } = dustSystem;
   
-  // Fırça koordinatını kürənin mərkəzinə görə normallaşdırırıq
-  const vec = new THREE.Vector3().copy(brushPos);
-  vec.y += CONFIG.MOON_RADIUS; // Kürənin mərkəzinə görə düzəliş
-  vec.normalize();
-  
-  // Kürənin səthindəki nöqtə
-  const px = vec.x * CONFIG.MOON_RADIUS;
-  const py = vec.y * CONFIG.MOON_RADIUS;
-  const pz = vec.z * CONFIG.MOON_RADIUS;
-
-  // UV koordinatlarına çeviririk
-  const u = 0.5 + (Math.atan2(pz, px) / (2 * Math.PI));
-  const v = 0.5 - (Math.asin(py / CONFIG.MOON_RADIUS) / Math.PI);
-
-  const canvasX = u * canvas.width;
-  const canvasY = v * canvas.height;
+  // UV (0-1) koordinatlarını Kətan (0-2048) koordinatlarına çeviririk
+  const canvasX = uv.x * canvas.width;
+  const canvasY = (1 - uv.y) * canvas.height; // Y oxu tərsdir
 
   const size = CONFIG.BRUSH_SIZE;
+  
+  // Sərhədləri qoruyuruq
+  const startX = Math.max(0, Math.min(canvas.width - size, Math.floor(canvasX - size/2)));
+  const startY = Math.max(0, Math.min(canvas.height - size, Math.floor(canvasY - size/2)));
 
-  const imageData = ctx.getImageData(canvasX - size/2, canvasY - size/2, size, size);
+  const imageData = ctx.getImageData(startX, startY, size, size);
   let silinenTozSayi = 0;
 
   for (let i = 3; i < imageData.data.length; i += 4) {
@@ -71,7 +65,7 @@ export function updateDustSystem(dustSystem, brushPos, isBrushing, dt) {
   }
 
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillRect(canvasX - size / 2, canvasY - size / 2, size, size);
+  ctx.fillRect(startX, startY, size, size);
   
   texture.needsUpdate = true;
 }
