@@ -79,8 +79,9 @@ export function setupControls() {
     inputState.cameraYaw -= dx * 0.01;
     inputState.cameraPitch -= dy * 0.01;
     
-    if (inputState.cameraPitch > CONFIG.PITCH_MAX) { inputState.cameraPitch = CONFIG.PITCH_MAX; }
-    if (inputState.cameraPitch < CONFIG.PITCH_MIN) { inputState.cameraPitch = CONFIG.PITCH_MIN; }
+    // Tam yuxarı/aşağı baxış
+    if (inputState.cameraPitch > CONFIG.PITCH_LIMIT) { inputState.cameraPitch = CONFIG.PITCH_LIMIT; }
+    if (inputState.cameraPitch < -CONFIG.PITCH_LIMIT) { inputState.cameraPitch = -CONFIG.PITCH_LIMIT; }
   });
 
   function endCam(e) {
@@ -90,7 +91,6 @@ export function setupControls() {
   camArea.addEventListener('pointerup', endCam);
   camArea.addEventListener('pointercancel', endCam);
 
-  // Düyməni basıb tutanda problemsiz işləməsi üçün preventDefault əlavə edildi
   actionBtn.addEventListener('pointerdown', (e) => {
     e.preventDefault(); 
     actionBtn.setPointerCapture(e.pointerId);
