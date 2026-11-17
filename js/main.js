@@ -30,12 +30,13 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-const playerPos = new THREE.Vector3(0, CONFIG.MOON_RADIUS, 0);
-
+// Oyunçunun düz səthdə koordinatı (y həmişə 0)
+const playerPos = new THREE.Vector3(0, 0, 0);
+// Baxış istiqaməti
 const heading = new THREE.Vector3(0, 0, -1); 
 let currentPitch = 0;
 
-const upVec = new THREE.Vector3();
+const upVec = new THREE.Vector3(0, 1, 0); 
 const rightVec = new THREE.Vector3();
 const moveVec = new THREE.Vector3();
 const lookDir = new THREE.Vector3();
@@ -44,17 +45,30 @@ const raycaster = new THREE.Raycaster();
 const screenCenter = new THREE.Vector2(0, 0); 
 const clock = new THREE.Clock();
 
+// Sərhədi aşan koordinatları qarşı tərəfə keçirən funksiya (kürə effekti)
+function wrapCoordinate(value) {
+  const size = CONFIG.SURFACE_SIZE;
+  const half = size / 2;
+  if (value > half) {
+    return value - size;
+  }
+  if (value < -half) {
+    return value + size;
+  }
+  return value;
+}
+
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
 
-  upVec.copy(playerPos).normalize();
-
+  // Yaw (sağa-sola baxış)
   if (inputState.cameraYaw !== 0) {
     heading.applyAxisAngle(upVec, -inputState.cameraYaw);
     inputState.cameraYaw = 0;
   }
 
+  // Pitch (yuxarı-aşağı baxış)
   if (inputState.cameraPitch !== 0) {
     currentPitch += inputState.cameraPitch;
     if (currentPitch > CONFIG.PITCH_LIMIT) { currentPitch = CONFIG.PITCH_LIMIT; }
@@ -62,7 +76,9 @@ function animate() {
     inputState.cameraPitch = 0;
   }
 
-  heading.projectOnPlane(upVec).normalize();
+  // Hərəkət vektorlarını hesablayırıq
+  heading.y = 0;
+  heading.normalize();
   rightVec.crossVectors(heading, upVec).normalize();
 
   moveVec.set(0, 0, 0);
@@ -72,16 +88,20 @@ function animate() {
   if (moveVec.lengthSq() > 0.01) {
     moveVec.normalize();
     playerPos.addScaledVector(moveVec, CONFIG.PLAYER_SPEED * dt);
-    playerPos.normalize().multiplyScalar(CONFIG.MOON_RADIUS);
+    
+    // Kürə effekti üçün koordinatları wrap edirik
+    playerPos.x = wrapCoordinate(playerPos.x);
+    playerPos.z = wrapCoordinate(playerPos.z);
   }
 
-  upVec.copy(playerPos).normalize();
-  camera.position.copy(playerPos).addScaledVector(upVec, CONFIG.CAMERA_HEIGHT);
-  camera.up.copy(upVec);
+  // Kameranı yeniləyirik
+  camera.position.set(playerPos.x, playerPos.y + CONFIG.CAMERA_HEIGHT, playerPos.z);
+  camera.up.set(0, 1, 0); 
 
   lookDir.copy(heading).multiplyScalar(Math.cos(currentPitch)).addScaledVector(upVec, Math.sin(currentPitch));
   camera.lookAt(camera.position.clone().add(lookDir));
 
+  // Fırça animasiyası
   if (inputState.actionPressed) {
     brushGroup.position.y = -0.4; 
     brushGroup.rotation.x = 0.8;  
@@ -90,6 +110,7 @@ function animate() {
     brushGroup.rotation.x = 0.3;
   }
 
+  // Təmizləmə
   raycaster.setFromCamera(screenCenter, camera);
   const intersects = raycaster.intersectObject(dustSystem.dustMesh);
   
