@@ -13,14 +13,15 @@ export function createDustSystem(scene) {
 
   const texture = new THREE.CanvasTexture(canvas);
   
-  const geo = new THREE.SphereGeometry(CONFIG.MOON_RADIUS + 0.1, 64, 64);
+  const geo = new THREE.PlaneGeometry(CONFIG.SURFACE_SIZE, CONFIG.SURFACE_SIZE);
   const mat = new THREE.MeshBasicMaterial({ 
     map: texture, 
     transparent: true
   });
   
   const dustMesh = new THREE.Mesh(geo, mat);
-  dustMesh.position.set(0, 0, 0); 
+  dustMesh.rotation.x = -Math.PI / 2;
+  dustMesh.position.y = 0.05; 
   scene.add(dustMesh);
 
   return { canvas, ctx, texture, dustMesh };
@@ -36,19 +37,12 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   const canvasX = uv.x * canvas.width;
   const canvasY = (1 - uv.y) * canvas.height;
 
-  const baseSize = CONFIG.BRUSH_SIZE;
-  const v = 1 - uv.y;
-  const sinTheta = Math.sin(v * Math.PI);
-  // Qütb kompensasiyası: maksimum 2.5 dəfə genişləndiririk
-  const widthFactor = Math.min(2.5, 1.0 / Math.max(sinTheta, 0.4));
-  
-  const brushWidth = baseSize * widthFactor;
-  const brushHeight = baseSize;
+  const size = CONFIG.BRUSH_SIZE;
 
-  const startX = Math.max(0, Math.min(canvas.width - brushWidth, Math.floor(canvasX - brushWidth / 2)));
-  const startY = Math.max(0, Math.min(canvas.height - brushHeight, Math.floor(canvasY - brushHeight / 2)));
+  const startX = Math.max(0, Math.min(canvas.width - size, Math.floor(canvasX - size / 2)));
+  const startY = Math.max(0, Math.min(canvas.height - size, Math.floor(canvasY - size / 2)));
 
-  const imageData = ctx.getImageData(startX, startY, Math.ceil(brushWidth), brushHeight);
+  const imageData = ctx.getImageData(startX, startY, size, size);
   let silinenTozSayi = 0;
 
   for (let i = 3; i < imageData.data.length; i += 4) {
@@ -58,11 +52,11 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   }
 
   if (silinenTozSayi > 0) {
-    tozToplA(silinenTozSayi * CONFIG.DUST_YIELD);
+    tozToplA(CONFIG.DUST_YIELD * dt * 60);
   }
 
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillRect(startX, startY, brushWidth, brushHeight);
+  ctx.fillRect(startX, startY, size, size);
   
   texture.needsUpdate = true;
 }
