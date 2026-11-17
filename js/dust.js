@@ -8,7 +8,7 @@ export function createDustSystem(scene) {
   canvas.height = CONFIG.CANVAS_SIZE;
   const ctx = canvas.getContext('2d');
 
-  // Kətanı qalın və tünd tozla doldururuq
+  // Kətanı tam tünd, ləkəsiz rənglə doldururuq (təsadüfi nöqtələr SİLİNDİ)
   ctx.fillStyle = '#2a2a2a'; 
   ctx.fillRect(0, 0, CONFIG.CANVAS_SIZE, CONFIG.CANVAS_SIZE);
 
@@ -29,7 +29,6 @@ export function createDustSystem(scene) {
   return { canvas, ctx, texture };
 }
 
-// YENİLƏNDİ: dt (keçən vaxt) parametri əlavə edildi
 export function updateDustSystem(dustSystem, brushPos, isBrushing, dt) {
   if (!isBrushing) {
     return;
@@ -40,18 +39,16 @@ export function updateDustSystem(dustSystem, brushPos, isBrushing, dt) {
   const canvasX = ((brushPos.x + CONFIG.MOON_RADIUS) / (CONFIG.MOON_RADIUS * 2)) * canvas.width;
   const canvasY = ((brushPos.z + CONFIG.MOON_RADIUS) / (CONFIG.MOON_RADIUS * 2)) * canvas.height;
 
-  // Yalnız mərkəzi pikselə yox, fırçanın dəydiyi sahədə toz varsa, çantaya artır
   const pixel = ctx.getImageData(canvasX, canvasY, 1, 1).data;
   if (pixel[3] > 0) { 
-    // dt ilə vururuq ki, hər kadrda (saniyədə 60 dəfə) düzgün miqdar artsın
     tozToplA(CONFIG.DUST_YIELD * dt);
   }
 
-  // Silgi effekti
+  // Kvadrat silgi effekti (piksel kimi)
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.beginPath();
-  ctx.arc(canvasX, canvasY, CONFIG.BRUSH_RADIUS, 0, Math.PI * 2);
-  ctx.fill();
+  const size = CONFIG.BRUSH_SIZE;
+  // Dairə (arc) yerinə Kvadrat (fillRect) istifadə edirik
+  ctx.fillRect(canvasX - size / 2, canvasY - size / 2, size, size);
   
   texture.needsUpdate = true;
 }
