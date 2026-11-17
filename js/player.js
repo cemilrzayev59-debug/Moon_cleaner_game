@@ -1,8 +1,6 @@
-// Birinci şəxs idarəetməsi və Fırça modeli
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 
-// Fırçanı yaradır və birbaşa Kameraya əlavə edir
 export function createPlayer(camera) {
   const player = new THREE.Group();
   
@@ -21,9 +19,9 @@ export function createPlayer(camera) {
   bristles.position.y = -0.25;
   brushGroup.add(bristles);
 
-  brushGroup.position.set(0.4, -0.4, -0.8); 
-  brushGroup.rotation.x = 0.5;
-  brushGroup.rotation.z = -0.3;
+  brushGroup.position.set(0.3, -0.35, -0.6); 
+  brushGroup.rotation.x = 0.3;
+  brushGroup.rotation.z = -0.2;
   
   camera.add(brushGroup);
   
@@ -31,12 +29,13 @@ export function createPlayer(camera) {
 }
 
 export function updatePlayer(player, input, cameraYaw, dt, isBrushing, brushGroup) {
+  // Fırçanın aşağı enməsi
   if (isBrushing) {
-    brushGroup.position.y = -0.6; 
-    brushGroup.rotation.x = 1.0;  
+    brushGroup.position.y = -0.55; 
+    brushGroup.rotation.x = 0.8;  
   } else {
-    brushGroup.position.y = -0.4; 
-    brushGroup.rotation.x = 0.5;
+    brushGroup.position.y = -0.35; 
+    brushGroup.rotation.x = 0.3;
   }
 
   const sinY = Math.sin(cameraYaw);
@@ -63,4 +62,12 @@ export function updatePlayer(player, input, cameraYaw, dt, isBrushing, brushGrou
     player.position.x = (dx / dist) * maxDist;
     player.position.z = (dz / dist) * maxDist;
   }
+}
+
+// YENİ: Fırçanın dünyadakı real koordinatını tapırıq
+export function getBrushWorldPosition(brushGroup) {
+  const vec = new THREE.Vector3();
+  brushGroup.getWorldPosition(vec);
+  vec.y = 0.03; // Y oxunu yerə endiririk
+  return vec;
 }
