@@ -42,11 +42,9 @@ function updateCamera() {
   camera.rotation.set(inputState.cameraPitch, inputState.cameraYaw, 0);
 }
 
-// YENİ: Raycaster (Şüa atıcı) yaradırıq
 const raycaster = new THREE.Raycaster();
-// Fırçanın ekranda olduğu yer (sağ aşağı)
-// Ekranın mərkəzi (0,0)-dır. Sağ aşağı üçün X müsbət, Y mənfi olur.
-const brushNDC = new THREE.Vector2(0.2, -0.2); 
+// Şüanı ekranın MƏRKƏZİNDƏN (0,0) göndəririk ki, hara baxırsansa oranı təmizləsin
+const screenCenter = new THREE.Vector2(0, 0); 
 
 const clock = new THREE.Clock();
 
@@ -56,14 +54,12 @@ function animate() {
 
   updatePlayer(player, inputState.joystick, inputState.cameraYaw, dt, inputState.actionPressed, brushGroup);
   
-  // Kameradan fırçanın istiqamətinə şüa göndəririk
-  raycaster.setFromCamera(brushNDC, camera);
+  // Şüanı kameranın baxdığı mərkəzdən göndəririk
+  raycaster.setFromCamera(screenCenter, camera);
   
-  // Şüanın toz kürəsinə dəyib-dəymədiyini yoxlayırıq
   const intersects = raycaster.intersectObject(dustSystem.dustMesh);
   
   if (intersects.length > 0) {
-    // Əgər dəyibsə, həmin nöqtənin dəqiq UV koordinatını alırıq
     const uv = intersects[0].uv;
     updateDustSystem(dustSystem, uv, inputState.actionPressed, dt);
   }
