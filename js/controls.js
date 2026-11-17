@@ -1,9 +1,9 @@
-// Virtual joystick, kamera sürüşdürmə və təmizləmə düyməsi
 import { CONFIG } from './config.js';
 
 export const inputState = {
   joystick: { x: 0, y: 0 },
   cameraYaw: 0,
+  cameraPitch: 0, // YENİ: Yuxarı/aşağı baxış
   actionPressed: false,
 };
 
@@ -16,6 +16,7 @@ export function setupControls() {
   let joyPointerId = null;
   let camPointerId = null;
   let camLastX = 0;
+  let camLastY = 0; // YENİ
 
   function updateJoystick(e) {
     const rect = joyBase.getBoundingClientRect();
@@ -60,18 +61,33 @@ export function setupControls() {
   joyBase.addEventListener('pointerup', endJoy);
   joyBase.addEventListener('pointercancel', endJoy);
 
+  // ---- Kamera (Yuxarı/Aşağı və Sağa/Sola) ----
   camArea.addEventListener('pointerdown', (e) => {
     if (camPointerId !== null) { return; }
     camPointerId = e.pointerId;
     camLastX = e.clientX;
+    camLastY = e.clientY;
     camArea.setPointerCapture(e.pointerId);
   });
 
   camArea.addEventListener('pointermove', (e) => {
     if (e.pointerId !== camPointerId) { return; }
     const dx = e.clientX - camLastX;
+    const dy = e.clientY - camLastY;
     camLastX = e.clientX;
+    camLastY = e.clientY;
+    
+    // Sağa-sola fırlanma
     inputState.cameraYaw -= dx * 0.01;
+    
+    // Yuxarı-aşağı baxış (limitlərlə)
+    inputState.cameraPitch -= dy * 0.01;
+    if (inputState.cameraPitch > CONFIG.PITCH_MAX) {
+      inputState.cameraPitch = CONFIG.PITCH_MAX;
+    }
+    if (inputState.cameraPitch < CONFIG.PITCH_MIN) {
+      inputState.cameraPitch = CONFIG.PITCH_MIN;
+    }
   });
 
   function endCam(e) {
@@ -86,7 +102,7 @@ export function setupControls() {
     inputState.actionPressed = true;
   });
   
-  actionBtn.addEventListener('pointerup', (e) => {
+  actionBtn.addEventListener('pointerup', () => {
     inputState.actionPressed = false;
   });
   
