@@ -13,7 +13,6 @@ export function createDustSystem(scene) {
 
   const texture = new THREE.CanvasTexture(canvas);
   
-  // Kürə üçün SphereGeometry (Ay səthindən bir az böyük)
   const geo = new THREE.SphereGeometry(CONFIG.MOON_RADIUS + 0.1, 64, 64);
   const mat = new THREE.MeshBasicMaterial({ 
     map: texture, 
@@ -38,16 +37,21 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
 
   const { ctx, texture, canvas } = dustSystem;
   
-  // UV koordinatlarını kətan ölçüsünə çeviririk
   const canvasX = uv.x * canvas.width;
-  const canvasY = (1 - uv.y) * canvas.height; // Three.js-də Y tərsdir
+  const canvasY = (1 - uv.y) * canvas.height;
 
   const size = CONFIG.BRUSH_SIZE;
-  
-  const startX = Math.max(0, Math.min(canvas.width - size, Math.floor(canvasX - size/2)));
-  const startY = Math.max(0, Math.min(canvas.height - size, Math.floor(canvasY - size/2)));
 
-  const imageData = ctx.getImageData(startX, startY, size, size);
+  // DÜZƏLİŞ: Kürənin qütblərində UV dartılmasının qarşısını alırıq
+  // uv.y 0 və ya 1-ə yaxınlaşdıqca (qütblərə yaxın) fırçanın enini kiçildirik
+  const poleFactor = Math.sin(uv.y * Math.PI); 
+  const dynamicWidth = Math.max(size * 0.3, size * poleFactor);
+  const dynamicHeight = size;
+  
+  const startX = Math.max(0, Math.min(canvas.width - dynamicWidth, Math.floor(canvasX - dynamicWidth/2)));
+  const startY = Math.max(0, Math.min(canvas.height - dynamicHeight, Math.floor(canvasY - dynamicHeight/2)));
+
+  const imageData = ctx.getImageData(startX, startY, Math.ceil(dynamicWidth), dynamicHeight);
   let silinenTozSayi = 0;
 
   for (let i = 3; i < imageData.data.length; i += 4) {
@@ -61,7 +65,7 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   }
 
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillRect(startX, startY, size, size);
+  ctx.fillRect(startX, startY, dynamicWidth, dynamicHeight);
   
   texture.needsUpdate = true;
 }
