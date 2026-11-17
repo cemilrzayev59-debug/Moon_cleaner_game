@@ -14,12 +14,14 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
 
 const { scene } = createWorld();
-const player = createPlayer(scene);
+scene.add(camera);
 
-// Toz sistemini qur
+const { player, brushGroup } = createPlayer(camera);
+scene.add(player);
+
 const dustSystem = createDustSystem(scene);
 
 setupControls();
@@ -32,11 +34,15 @@ window.addEventListener('resize', () => {
 });
 
 function updateCamera() {
-  const yaw = inputState.cameraYaw;
-  const ox = Math.sin(yaw) * CONFIG.CAMERA_DISTANCE;
-  const oz = Math.cos(yaw) * CONFIG.CAMERA_DISTANCE;
-  camera.position.set(player.position.x + ox, player.position.y + CONFIG.CAMERA_HEIGHT, player.position.z + oz);
-  camera.lookAt(player.position.x, player.position.y + 1.2, player.position.z);
+  camera.position.set(
+    player.position.x,
+    player.position.y + CONFIG.CAMERA_HEIGHT,
+    player.position.z
+  );
+  
+  const lookX = player.position.x - Math.sin(inputState.cameraYaw) * 10;
+  const lookZ = player.position.z - Math.cos(inputState.cameraYaw) * 10;
+  camera.lookAt(lookX, player.position.y + CONFIG.CAMERA_HEIGHT - 0.5, lookZ);
 }
 
 const clock = new THREE.Clock();
@@ -45,18 +51,8 @@ function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
 
-  updatePlayer(player, inputState.joystick, inputState.cameraYaw, dt);
-  
-  // Toz sistemini yenilə
-  updateDustSystem(dustSystem, player.position, inputState.actionPressed, dt);
-  
-  // Düymə basılıbsa fırçanı bir az yellə (vizual effekt)
-  if (inputState.actionPressed) {
-    player.rotation.z = Math.sin(Date.now() * 0.02) * 0.1;
-  } else {
-    player.rotation.z = 0;
-  }
-  
+  updatePlayer(player, inputState.joystick, inputState.cameraYaw, dt, inputState.actionPressed, brushGroup);
+  updateDustSystem(dustSystem, player.position, inputState.cameraYaw, inputState.actionPressed, dt);
   updateCamera();
   updateHUD();
 
