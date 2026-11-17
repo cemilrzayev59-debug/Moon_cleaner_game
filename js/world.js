@@ -21,18 +21,18 @@ export function createWorld() {
   const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false });
   scene.add(new THREE.Points(starGeo, starMat));
 
-  // ---- Nəhəng Ay Səthi (Düz) ----
-  const groundGeo = new THREE.PlaneGeometry(CONFIG.SURFACE_SIZE, CONFIG.SURFACE_SIZE);
+  // ---- Ay Səthi (Kürə) ----
+  const groundGeo = new THREE.SphereGeometry(CONFIG.MOON_RADIUS, 64, 64);
   const groundMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
   const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -CONFIG.MOON_RADIUS;
   scene.add(ground);
 
   // ---- Yer ----
-  const earthGeo = new THREE.SphereGeometry(40, 16, 12);
+  const earthGeo = new THREE.SphereGeometry(30, 16, 12);
   const earthMat = new THREE.MeshStandardMaterial({ color: 0x3388ff, emissive: 0x114488, flatShading: true });
   const earth = new THREE.Mesh(earthGeo, earthMat);
-  earth.position.set(300, 200, -400);
+  earth.position.set(200, 150, -300);
   scene.add(earth);
 
   // ---- İşıq ----
