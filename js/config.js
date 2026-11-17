@@ -1,5 +1,5 @@
 export const CONFIG = {
-  VERSION: 'v0.4.0',
+  VERSION: 'v0.4.1',
   MOON_RADIUS: 60,
   PLAYER_SPEED: 6,          
   JOYSTICK_RADIUS: 50,      
@@ -9,8 +9,8 @@ export const CONFIG = {
   PITCH_MIN: -1.4,          
   PITCH_MAX: 1.4,           
 
-  // YENİ: Toz və Təmizləmə Sistemi (Canvas)
-  CANVAS_SIZE: 1024,        // Rəsm vərəqinin ölçüsü (nə qədər böyük olsa, o qədər dəqiq silinir)
-  BRUSH_RADIUS: 25,         // Fırçanın ekranda siləcəyi dairənin ölçüsü (piksel)
-  DUST_YIELD: 0.5,          // Hər silinən piksel üçün çantaya düşən toz miqdarı
+  // Toz və Təmizləmə Sistemi
+  CANVAS_SIZE: 1024,        
+  BRUSH_RADIUS: 8,          // Fırçanın ağzı kiçildildi (əvvəl 25 idi)
+  DUST_YIELD: 15,           // Saniyədə yığılan toz miqdarı (əvvəl 0.5 idi, çox az idi)
 };
