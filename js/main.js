@@ -13,9 +13,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
-// Kamera rotasiya qaydası (FPS üçün standart)
-camera.rotation.order = 'YXZ';
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500);
+camera.rotation.order = 'YXZ'; // Kameranın düzgün fırlanması üçün vacibdir
 
 const { scene } = createWorld();
 scene.add(camera);
@@ -35,14 +34,13 @@ window.addEventListener('resize', () => {
 });
 
 function updateCamera() {
-  // Oyunçunun göz hündürlüyündə
   camera.position.set(
     player.position.x,
     player.position.y + CONFIG.CAMERA_HEIGHT,
     player.position.z
   );
   
-  // Birbaşa rotasiya təyin edirik (Yuxarı-aşağı və Sağa-sola)
+  // Birbaşa rotasiya (Yuxarı-aşağı və Sağa-sola)
   camera.rotation.set(inputState.cameraPitch, inputState.cameraYaw, 0);
 }
 
@@ -57,7 +55,7 @@ function animate() {
   // Fırçanın real dünya koordinatını alırıq
   const brushPos = getBrushWorldPosition(brushGroup);
   
-  // Təmizləmə sistemini fırçanın koordinatı ilə işlədirik
+  // Təmizləmə (piksel kimi)
   updateDustSystem(dustSystem, brushPos, inputState.actionPressed, dt);
   
   updateCamera();
