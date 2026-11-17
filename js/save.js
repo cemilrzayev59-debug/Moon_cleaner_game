@@ -1,4 +1,4 @@
-// localStorage ilə saxlama/yükləmə
+// localStorage ilə saxlama/yükləməsi
 import { GameState } from './state.js';
 
 const SAVE_KEY = 'ay_temizleme_save_v1';
