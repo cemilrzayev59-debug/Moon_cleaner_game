@@ -6,10 +6,10 @@ export function createWorld() {
   scene.background = new THREE.Color(0x000008);
 
   // ---- Ulduzlar ----
-  const starCount = 800;
+  const starCount = 2000; // Ulduz sayını artırdıq
   const positions = new Float32Array(starCount * 3);
   for (let i = 0; i < starCount; i++) {
-    const r = 300;
+    const r = 800; // Ulduzlar daha uzaqda
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
     positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
@@ -18,26 +18,27 @@ export function createWorld() {
   }
   const starGeo = new THREE.BufferGeometry();
   starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, sizeAttenuation: false });
+  const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false });
   scene.add(new THREE.Points(starGeo, starMat));
 
-  // ---- Ay səthi (MeshBasicMaterial istifadə etdik ki, işıq və kölgə təsir etməsin) ----
-  const groundGeo = new THREE.CircleGeometry(CONFIG.MOON_RADIUS, 64);
-  const groundMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa }); // Tam düz boz
+  // ---- Ay səthi (Böyük Kürə) ----
+  const groundGeo = new THREE.SphereGeometry(CONFIG.MOON_RADIUS, 64, 64);
+  const groundMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
   const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.rotation.x = -Math.PI / 2;
+  // Kürənin mərkəzini aşağı salırıq ki, oyunçu yuxarı qütbdə (y=0) başlasın
+  ground.position.y = -CONFIG.MOON_RADIUS;
   scene.add(ground);
 
   // ---- Yer ----
-  const earthGeo = new THREE.SphereGeometry(15, 16, 12);
+  const earthGeo = new THREE.SphereGeometry(30, 16, 12);
   const earthMat = new THREE.MeshStandardMaterial({ color: 0x3388ff, emissive: 0x114488, flatShading: true });
   const earth = new THREE.Mesh(earthGeo, earthMat);
-  earth.position.set(80, 50, -120);
+  earth.position.set(300, 200, -400);
   scene.add(earth);
 
   // ---- İşıq ----
   const sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
-  sunLight.position.set(30, 50, 20);
+  sunLight.position.set(100, 200, 100);
   scene.add(sunLight);
 
   const ambient = new THREE.AmbientLight(0x445566, 0.8);
