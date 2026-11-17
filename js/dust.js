@@ -27,11 +27,7 @@ export function createDustSystem(scene) {
 }
 
 export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
-  if (!isBrushing) {
-    return;
-  }
-
-  if (GameState.bag >= GameState.bagCapacity) {
+  if (!isBrushing || GameState.bag >= GameState.bagCapacity) {
     return;
   }
 
@@ -40,18 +36,24 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   const canvasX = uv.x * canvas.width;
   const canvasY = (1 - uv.y) * canvas.height;
 
-  const size = CONFIG.BRUSH_SIZE;
+  const baseSize = CONFIG.BRUSH_SIZE;
 
-  // DÜZƏLİŞ: Kürənin qütblərində UV dartılmasının qarşısını alırıq
-  // uv.y 0 və ya 1-ə yaxınlaşdıqca (qütblərə yaxın) fırçanın enini kiçildirik
-  const poleFactor = Math.sin(uv.y * Math.PI); 
-  const dynamicWidth = Math.max(size * 0.3, size * poleFactor);
-  const dynamicHeight = size;
+  // QÜTBLƏRDƏ DARTILMANI TARAZLAŞDIRIRIQ
+  // v = 1 - uv.y (0-dan 1-ə qədər)
+  const v = 1 - uv.y;
+  // sin(v * PI) qütblərdə 0-a yaxınlaşır, ekvatorda 1 olur
+  const sinTheta = Math.sin(v * Math.PI);
   
-  const startX = Math.max(0, Math.min(canvas.width - dynamicWidth, Math.floor(canvasX - dynamicWidth/2)));
-  const startY = Math.max(0, Math.min(canvas.height - dynamicHeight, Math.floor(canvasY - dynamicHeight/2)));
+  // Fırçanın enini qütblərdə daha geniş edirik ki, 3D-də eyni görünsün
+  const widthFactor = 1.0 / Math.max(sinTheta, 0.05); 
+  
+  const brushWidth = baseSize * widthFactor;
+  const brushHeight = baseSize;
 
-  const imageData = ctx.getImageData(startX, startY, Math.ceil(dynamicWidth), dynamicHeight);
+  const startX = Math.max(0, Math.min(canvas.width - brushWidth, Math.floor(canvasX - brushWidth / 2)));
+  const startY = Math.max(0, Math.min(canvas.height - brushHeight, Math.floor(canvasY - brushHeight / 2)));
+
+  const imageData = ctx.getImageData(startX, startY, Math.ceil(brushWidth), brushHeight);
   let silinenTozSayi = 0;
 
   for (let i = 3; i < imageData.data.length; i += 4) {
@@ -65,7 +67,7 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   }
 
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillRect(startX, startY, dynamicWidth, dynamicHeight);
+  ctx.fillRect(startX, startY, brushWidth, brushHeight);
   
   texture.needsUpdate = true;
 }
