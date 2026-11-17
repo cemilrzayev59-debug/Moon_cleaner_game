@@ -1,19 +1,18 @@
 export const CONFIG = {
-  VERSION: 'v0.3.1',
+  VERSION: 'v0.3.2',
   MOON_RADIUS: 60,
   PLAYER_SPEED: 6,          
   JOYSTICK_RADIUS: 50,      
   BAG_CAPACITY: 100,
 
-  // Kamera (Birinci şəxs)
+  // Kamera (Tam yuxarı və aşağı baxış)
   CAMERA_HEIGHT: 1.8,       
-  PITCH_MIN: -0.8,          // Aşağı baxış limitiuuu
-  PITCH_MAX: 0.6,           // Yuxarı baxış limiti
+  PITCH_MIN: -1.4,          // Təxminən 80 dərəcə aşağı
+  PITCH_MAX: 1.4,           // Təxminən 80 dərəcə yuxarı
 
-  // Toz sistemi və Fırça
-  DUST_COUNT: 150,          
-  DUST_RADIUS: 0.4,         // Tozlar indi daha kiçikdir
-  CLEAN_DISTANCE: 0.7,      // Təmizləmə radiusu fırça boydadır
-  CLEAN_SPEED: 5.0,         
+  // Toz sistemi (Piksel / Kvadrat forması)
+  DUST_COUNT: 1500,         // Daha çox, amma kiçik kvadratlar
+  DUST_RADIUS: 0.6,         // Kvadratın ölçüsü
+  CLEAN_DISTANCE: 0.9,      // Fırça dəyən kimi silinəcək məsafə
   DUST_YIELD: 1,            
 };
