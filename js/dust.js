@@ -8,13 +8,13 @@ export function createDustSystem(scene) {
   canvas.height = CONFIG.CANVAS_SIZE;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-  // Ay səthinin təmiz boz toz rəngi (İkinci şəkildəki kimi hamar düz səth)
-  ctx.fillStyle = '#999999'; 
+  // Tozun rəngi
+  ctx.fillStyle = '#888888'; 
   ctx.fillRect(0, 0, CONFIG.CANVAS_SIZE, CONFIG.CANVAS_SIZE);
 
   // İncə dənəvər toz toxuması
   for (let i = 0; i < 40000; i++) {
-    const shade = Math.floor(Math.random() * 40) + 130;
+    const shade = Math.floor(Math.random() * 50) + 110;
     ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
     const x = Math.random() * CONFIG.CANVAS_SIZE;
     const y = Math.random() * CONFIG.CANVAS_SIZE;
@@ -26,19 +26,36 @@ export function createDustSystem(scene) {
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(CONFIG.PLANE_SIZE / CONFIG.SURFACE_SIZE, CONFIG.PLANE_SIZE / CONFIG.SURFACE_SIZE);
   
-  // Tamamilə DÜZ səth (heç bir dağ və ya qabarıqlıq yoxdur)
-  const geo = new THREE.PlaneGeometry(CONFIG.PLANE_SIZE, CONFIG.PLANE_SIZE);
+  // Yer tamamilə düzdür, toz isə yerin üzərində oturan real 3D qalınlığı olan nazik düz qutudur (BoxGeometry)
+  const layerThickness = 0.05; // Toz qatının real 3D hündürlüyü (qalınlığı)
+  const geo = new THREE.BoxGeometry(CONFIG.PLANE_SIZE, layerThickness, CONFIG.PLANE_SIZE);
   
-  const mat = new THREE.MeshStandardMaterial({ 
+  // Üst səth (silinən toz teksturası)
+  const topMat = new THREE.MeshStandardMaterial({ 
     map: texture, 
     transparent: true,
-    roughness: 1.0,
-    depthWrite: false      
+    roughness: 0.9,
+    bumpMap: texture,      
+    bumpScale: 0.04,       
+    depthWrite: true      
   });
+
+  // Toz qatının yan divarları üçün rəng
+  const sideMat = new THREE.MeshStandardMaterial({
+    color: 0x777777,
+    roughness: 1.0
+  });
+
+  // 6 üz üçün materiallar: [sağ, sol, üst, alt, ön, arxa]
+  const materials = [
+    sideMat, sideMat,
+    topMat,  sideMat,
+    sideMat, sideMat
+  ];
   
-  const dustMesh = new THREE.Mesh(geo, mat);
-  dustMesh.rotation.x = -Math.PI / 2;
-  dustMesh.position.y = 0.02; // Yerin üzərində səliqəli düz qat
+  const dustMesh = new THREE.Mesh(geo, materials);
+  // Yerin üzərində səliqəli oturması üçün hündürlüyün yarısı qədər yuxarı qaldırırıq
+  dustMesh.position.y = layerThickness / 2; 
   scene.add(dustMesh);
 
   return { canvas, ctx, texture, dustMesh };
@@ -58,8 +75,7 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   const canvasX = localU * canvas.width;
   const canvasY = localV * canvas.height;
 
-  // Geniş fırça izi (İkinci şəkildəki kimi enli təmizləmə zolağı)[span_5](start_span)[span_5](end_span)
-  const size = CONFIG.BRUSH_SIZE * 3.5;
+  const size = CONFIG.BRUSH_SIZE;
 
   const pixel = ctx.getImageData(canvasX, canvasY, 1, 1).data;
   if (pixel[3] > 0) { 
