@@ -28,13 +28,13 @@ export function createDustSystem(scene) {
   
   const geo = new THREE.PlaneGeometry(CONFIG.PLANE_SIZE, CONFIG.PLANE_SIZE);
   
-  // Tozu 3D kimi göstərmək üçün bumpMap istifadə edirik
+  // Tozu 3D kimi göstərmək üçün bumpMap və artırılmış bumpScale istifadə edirik
   const mat = new THREE.MeshStandardMaterial({ 
     map: texture, 
     transparent: true,
     roughness: 0.9,
     bumpMap: texture,      // Qabarıqlıq üçün eyni teksturadan istifadə
-    bumpScale: 0.05,       // Qabarıqlığın həcmi
+    bumpScale: 0.18,       // 3D qalınlıq effekti üçün dəyər artırıldı (0.05 -> 0.18)
     depthWrite: false      // Kəsişmələrdə qara ləkələrin qarşısını alır
   });
   
