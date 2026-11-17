@@ -12,13 +12,12 @@ export function createDustSystem(scene) {
   ctx.fillStyle = '#888888'; 
   ctx.fillRect(0, 0, CONFIG.CANVAS_SIZE, CONFIG.CANVAS_SIZE);
 
-  // Güclü şum (noise) effekti - həm rəng, həm hündürlük üçün
-  for (let i = 0; i < 40000; i++) {
-    const shade = Math.floor(Math.random() * 50) + 120;
-    ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+  // Şum (noise) effekti
+  for (let i = 0; i < 30000; i++) {
+    ctx.fillStyle = Math.random() > 0.5 ? '#7a7a7a' : '#999999';
     const x = Math.random() * CONFIG.CANVAS_SIZE;
     const y = Math.random() * CONFIG.CANVAS_SIZE;
-    ctx.fillRect(x, y, 3, 3);
+    ctx.fillRect(x, y, 2, 2);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -26,24 +25,35 @@ export function createDustSystem(scene) {
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(CONFIG.PLANE_SIZE / CONFIG.SURFACE_SIZE, CONFIG.PLANE_SIZE / CONFIG.SURFACE_SIZE);
   
-  // Həqiqi 3D hündürlük (həndəsi qalınlıq) üçün səthi seqmentlərə bölürük (128x128)
-  const geo = new THREE.PlaneGeometry(CONFIG.PLANE_SIZE, CONFIG.PLANE_SIZE, 128, 128);
+  // Həqiqi 3D qalınlıq üçün PlaneGeometry əvəzinə BoxGeometry (En, Hündürlük/Qalınlıq, Uzunluq) istifadə edirik
+  const geo = new THREE.BoxGeometry(CONFIG.PLANE_SIZE, 0.4, CONFIG.PLANE_SIZE);
   
-  // MeshStandardMaterial üzərinə displacementMap əlavə edirik ki, toz həqiqətən qabarık (qalın) olsun
-  const mat = new THREE.MeshStandardMaterial({ 
+  // Üst səth üçün təmizlənən toz teksturası
+  const topMat = new THREE.MeshStandardMaterial({ 
     map: texture, 
     transparent: true,
-    roughness: 0.8,
+    roughness: 0.9,
     bumpMap: texture,      
-    bumpScale: 0.3,       // İşıq kölgə qabarıqlığı
-    displacementMap: texture, // Həqiqi 3D həndəsi hündürlük/qalınlıq
-    displacementScale: 0.8,   // Tozun qalınlıq hündürlüyü
+    bumpScale: 0.2,       
     depthWrite: false      
   });
+
+  // Yan divarlar üçün real toz/torpaq qalınlığı rəngi
+  const sideMat = new THREE.MeshStandardMaterial({
+    color: 0x777777,
+    roughness: 1.0
+  });
+
+  // BoxGeometry üçün 6 üzün materialı: [sağ, sol, üst, alt, ön, arxa]
+  const materials = [
+    sideMat, sideMat, // Yanlar
+    topMat,  sideMat, // Üst (toz təbəqəsi) və alt
+    sideMat, sideMat  // Yanlar
+  ];
   
-  const dustMesh = new THREE.Mesh(geo, mat);
-  dustMesh.rotation.x = -Math.PI / 2;
-  dustMesh.position.y = 0.05; // Yerdən bir az yuxarıda, həqiqi qat kimi
+  const dustMesh = new THREE.Mesh(geo, materials);
+  // Qutunun qalınlığının yarısı qədər yuxarı qaldırırıq ki, Ay səthinin üzərində 3D qat kimi oturub qalsın
+  dustMesh.position.y = 0.2; 
   scene.add(dustMesh);
 
   return { canvas, ctx, texture, dustMesh };
@@ -84,6 +94,4 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
   drawSquare(canvasX, canvasY + canvas.height);
   
   texture.needsUpdate = true;
-  // Həndəsi 3D dəyişikliyin yenilənməsi üçün geometry-ni aktivləşdiririk
-  dustSystem.dustMesh.geometry.computeVertexNormals();
 }
