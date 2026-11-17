@@ -14,7 +14,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500);
-camera.rotation.order = 'YXZ'; // Kameranın düzgün fırlanması üçün vacibdir
+camera.rotation.order = 'YXZ'; 
 
 const { scene } = createWorld();
 scene.add(camera);
@@ -22,6 +22,7 @@ scene.add(camera);
 const { player, brushGroup } = createPlayer(camera);
 scene.add(player);
 
+// Yeni toz sistemini qur
 const dustSystem = createDustSystem(scene);
 
 setupControls();
@@ -39,8 +40,6 @@ function updateCamera() {
     player.position.y + CONFIG.CAMERA_HEIGHT,
     player.position.z
   );
-  
-  // Birbaşa rotasiya (Yuxarı-aşağı və Sağa-sola)
   camera.rotation.set(inputState.cameraPitch, inputState.cameraYaw, 0);
 }
 
@@ -55,8 +54,8 @@ function animate() {
   // Fırçanın real dünya koordinatını alırıq
   const brushPos = getBrushWorldPosition(brushGroup);
   
-  // Təmizləmə (piksel kimi)
-  updateDustSystem(dustSystem, brushPos, inputState.actionPressed, dt);
+  // Təmizləmə (Silgi effekti)
+  updateDustSystem(dustSystem, brushPos, inputState.actionPressed);
   
   updateCamera();
   updateHUD();
