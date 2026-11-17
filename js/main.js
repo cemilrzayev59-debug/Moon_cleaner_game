@@ -13,13 +13,13 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+// Kameranın yaxınlığı (near) kiçildildi ki, fırça kəsilmsin
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 2000);
 
 const { scene } = createWorld();
 scene.add(camera);
 
 const { brushGroup } = createPlayer(camera);
-
 const dustSystem = createDustSystem(scene);
 
 setupControls();
@@ -31,67 +31,85 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Oyunçunun 3D koordinatı (Kürənin təpəsindən başlayır)
+// Oyunçunun 3D koordinatı (Ayın ən təpəsində başlayır)
 const playerPos = new THREE.Vector3(0, CONFIG.MOON_RADIUS, 0);
 
-// Köməkçi vektorlar
-const baseForward = new THREE.Vector3(0, 0, -1);
+// Baxış istiqaməti (vektor)
+const heading = new THREE.Vector3(0, 0, -1); 
+let currentPitch = 0;
+
+// Köməkçi vektorlar (yaddaşı qorumaq üçün bir dəfə yaradılır)
 const upVec = new THREE.Vector3();
-const forwardVec = new THREE.Vector3();
 const rightVec = new THREE.Vector3();
 const moveVec = new THREE.Vector3();
+const lookDir = new THREE.Vector3();
 
 const raycaster = new THREE.Raycaster();
 const screenCenter = new THREE.Vector2(0, 0); 
-
 const clock = new THREE.Clock();
 
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
 
-  // 1. Kürənin səth normalı (Yuxarı istiqamət)
+  // 1. Kürənin səthinə perpendikulyar vektor (Yuxarı)
   upVec.copy(playerPos).normalize();
 
-  // 2. Kameranın baxdığı istiqamətləri hesablayırıq
-  // Əvvəlcə Yaw (sağa-sola) fırlanmasını tətbiq edirik
-  forwardVec.copy(baseForward).applyAxisAngle(upVec, inputState.cameraYaw);
-  rightVec.crossVectors(forwardVec, upVec).normalize();
+  // 2. Kameranın sağa-sola dönməsi (Yaw)
+  if (inputState.cameraYaw !== 0) {
+    heading.applyAxisAngle(upVec, -inputState.cameraYaw);
+    inputState.cameraYaw = 0; // Sıfırlayırıq
+  }
 
-  // 3. Oyunçunu hərəkət etdiririk
+  // 3. Kameranın yuxarı-aşağı dönməsi (Pitch)
+  if (inputState.cameraPitch !== 0) {
+    currentPitch += inputState.cameraPitch;
+    if (currentPitch > 1.5) { currentPitch = 1.5; }
+    if (currentPitch < -1.5) { currentPitch = -1.5; }
+    inputState.cameraPitch = 0; // Sıfırlayırıq
+  }
+
+  // 4. Hərəkət vektorlarını hesablayırıq
+  // Heading həmişə yerə paralel olmalıdır
+  heading.projectOnPlane(upVec).normalize();
+  
+  // Sağ tərəf vektoru
+  rightVec.crossVectors(heading, upVec).normalize();
+
+  // Hərəkət istiqaməti
   moveVec.set(0, 0, 0);
-  moveVec.addScaledVector(forwardVec, inputState.joystick.y);
+  moveVec.addScaledVector(heading, inputState.joystick.y);
   moveVec.addScaledVector(rightVec, inputState.joystick.x);
 
   if (moveVec.lengthSq() > 0.01) {
     moveVec.normalize();
-    // Hərəkət etdikdən sonra koordinatı yeniləyirik
+    // Oyunçunu hərəkət etdiririk
     playerPos.addScaledVector(moveVec, CONFIG.PLAYER_SPEED * dt);
-    // Vektorun uzunluğunu dəyişdirib yenidən kürənin səthinə oturduruq
+    // Kürənin səthinə oturduruq (həmişə radius qədər məsafədə saxlayırıq)
     playerPos.normalize().multiplyScalar(CONFIG.MOON_RADIUS);
   }
 
-  // 4. Kameranı yeniləyirik
-  upVec.copy(playerPos).normalize(); // Yeni normal
-  camera.up.copy(upVec); // Kameranın "təpəsi" həmişə kürədən kənara baxır
+  // 5. Kameranı yeniləyirik
+  upVec.copy(playerPos).normalize(); // Yeni "yuxarı"
   
-  // Kamera oyunçunun göz hündürlüyündə
+  // Kamera oyunçunun gözündədir
   camera.position.copy(playerPos).addScaledVector(upVec, CONFIG.CAMERA_HEIGHT);
+  camera.up.copy(upVec); // Kameranın təpəsi həmişə kürədən kənara baxır
 
-  // Yuxarı/aşağı baxış (Pitch) əlavə edirik
-  const lookDir = forwardVec.clone().applyAxisAngle(rightVec, inputState.cameraPitch);
+  // Baxış istiqaməti (Pitch daxil olmaqla)
+  lookDir.copy(heading).multiplyScalar(Math.cos(currentPitch)).addScaledVector(upVec, Math.sin(currentPitch));
   camera.lookAt(camera.position.clone().add(lookDir));
 
-  // 5. Fırçanın animasiyası
+  // 6. Fırçanın animasiyası
   if (inputState.actionPressed) {
-    brushGroup.position.y = -0.6; 
-    brushGroup.rotation.x = 1.0;  
-  } else {
     brushGroup.position.y = -0.4; 
-    brushGroup.rotation.x = 0.5;
+    brushGroup.rotation.x = 0.8;  
+  } else {
+    brushGroup.position.y = -0.25; 
+    brushGroup.rotation.x = 0.3;
   }
 
-  // 6. Təmizləmə (Raycaster)
+  // 7. Təmizləmə (Ekranın mərkəzindən şüa atırıq)
   raycaster.setFromCamera(screenCenter, camera);
   const intersects = raycaster.intersectObject(dustSystem.dustMesh);
   
