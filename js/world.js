@@ -21,9 +21,10 @@ export function createWorld() {
   const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false });
   scene.add(new THREE.Points(starGeo, starMat));
 
-  // ---- Düz Ay Səthi (Böyük Kvadrat) ----
+  // ---- Düz Ay Səthi ----
   const groundGeo = new THREE.PlaneGeometry(CONFIG.PLANE_SIZE, CONFIG.PLANE_SIZE);
-  const groundMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+  // İşıqlandırma və kölgə effekti üçün MeshStandardMaterial
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 1.0 });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
@@ -36,11 +37,11 @@ export function createWorld() {
   scene.add(earth);
 
   // ---- İşıq ----
-  const sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
+  const sunLight = new THREE.DirectionalLight(0xffffff, 1.2); // İşıq gücü azaldıldı ki, rənglər daha yumşaq olsun
   sunLight.position.set(100, 300, 100);
   scene.add(sunLight);
 
-  const ambient = new THREE.AmbientLight(0x445566, 0.8);
+  const ambient = new THREE.AmbientLight(0x445566, 0.9);
   scene.add(ambient);
 
   return { scene };
