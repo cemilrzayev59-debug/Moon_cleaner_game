@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Ayın Səthini Təmizləmək</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="game-container"></div>
+
+  <div id="hud">
+    <div id="hud-money">💰 0</div>
+    <div id="hud-bag">🎒 0/100</div>
+  </div>
+
+  <div id="version-tag">v0.1</div>
+
+  <div id="joystick-base">
+    <div id="joystick-knob"></div>
+  </div>
+
+  <div id="camera-area"></div>
+
+  <button id="action-btn">🪥</button>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
