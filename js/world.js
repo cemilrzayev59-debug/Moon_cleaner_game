@@ -6,10 +6,10 @@ export function createWorld() {
   scene.background = new THREE.Color(0x000008);
 
   // ---- Ulduzlar ----
-  const starCount = 2000; // Ulduz sayını artırdıq
+  const starCount = 2000;
   const positions = new Float32Array(starCount * 3);
   for (let i = 0; i < starCount; i++) {
-    const r = 800; // Ulduzlar daha uzaqda
+    const r = 800;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
     positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
@@ -21,16 +21,15 @@ export function createWorld() {
   const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false });
   scene.add(new THREE.Points(starGeo, starMat));
 
-  // ---- Ay səthi (Böyük Kürə) ----
-  const groundGeo = new THREE.SphereGeometry(CONFIG.MOON_RADIUS, 64, 64);
+  // ---- Nəhəng Ay Səthi (Düz) ----
+  const groundGeo = new THREE.PlaneGeometry(CONFIG.SURFACE_SIZE, CONFIG.SURFACE_SIZE);
   const groundMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
   const ground = new THREE.Mesh(groundGeo, groundMat);
-  // Kürənin mərkəzini aşağı salırıq ki, oyunçu yuxarı qütbdə (y=0) başlasın
-  ground.position.y = -CONFIG.MOON_RADIUS;
+  ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
   // ---- Yer ----
-  const earthGeo = new THREE.SphereGeometry(30, 16, 12);
+  const earthGeo = new THREE.SphereGeometry(40, 16, 12);
   const earthMat = new THREE.MeshStandardMaterial({ color: 0x3388ff, emissive: 0x114488, flatShading: true });
   const earth = new THREE.Mesh(earthGeo, earthMat);
   earth.position.set(300, 200, -400);
