@@ -22,15 +22,13 @@ export function createWorld() {
   const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, sizeAttenuation: false });
   scene.add(new THREE.Points(starGeo, starMat));
 
-  // ---- Ay səthi (Düz boz rəng) ----
+  // ---- Ay səthi (Tam təmiz, düz boz) ----
   const groundGeo = new THREE.CircleGeometry(CONFIG.MOON_RADIUS, 64);
-  // Rəngi bir az daha açıq boz etdik ki, tozla (tünd boz) kontrast yaxşı olsun
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, flatShading: true });
+  // flatShading silindi ki, işıq düşəndə ləkə-ləkə kölgə yaratmasın
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0 });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
-
-  // Kraterlər tamamilə silindi
 
   // ---- Yer ----
   const earthGeo = new THREE.SphereGeometry(15, 16, 12);
