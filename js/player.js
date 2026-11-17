@@ -50,7 +50,6 @@ export function updatePlayer(player, input, cameraYaw, dt, isBrushing, brushGrou
   const nz = moveZ / mag;
   const speed = Math.min(mag, 1);
 
-  // X və Z oxu üzrə hərəkət
   player.position.x += nx * CONFIG.PLAYER_SPEED * speed * dt;
   player.position.z += nz * CONFIG.PLAYER_SPEED * speed * dt;
 
@@ -58,7 +57,9 @@ export function updatePlayer(player, input, cameraYaw, dt, isBrushing, brushGrou
   const dx = player.position.x;
   const dz = player.position.z;
   const dist = Math.sqrt(dx * dx + dz * dz);
-  const maxDist = CONFIG.MOON_RADIUS * 0.95;
+  
+  // DÜZƏLİŞ: Qütblərə çox yaxınlaşmağı qadağan edirik (0.95 əvəzinə 0.75 etdik)
+  const maxDist = CONFIG.MOON_RADIUS * 0.75;
 
   if (dist > maxDist) {
     player.position.x = (dx / dist) * maxDist;
