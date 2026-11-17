@@ -3,7 +3,7 @@ import { CONFIG } from './config.js';
 export const inputState = {
   joystick: { x: 0, y: 0 },
   cameraYaw: 0,
-  cameraPitch: 0, // YENİ: Yuxarı/aşağı baxış
+  cameraPitch: 0,
   actionPressed: false,
 };
 
@@ -16,7 +16,7 @@ export function setupControls() {
   let joyPointerId = null;
   let camPointerId = null;
   let camLastX = 0;
-  let camLastY = 0; // YENİ
+  let camLastY = 0;
 
   function updateJoystick(e) {
     const rect = joyBase.getBoundingClientRect();
@@ -61,7 +61,6 @@ export function setupControls() {
   joyBase.addEventListener('pointerup', endJoy);
   joyBase.addEventListener('pointercancel', endJoy);
 
-  // ---- Kamera (Yuxarı/Aşağı və Sağa/Sola) ----
   camArea.addEventListener('pointerdown', (e) => {
     if (camPointerId !== null) { return; }
     camPointerId = e.pointerId;
@@ -77,11 +76,10 @@ export function setupControls() {
     camLastX = e.clientX;
     camLastY = e.clientY;
     
-    // Sağa-sola fırlanma
     inputState.cameraYaw -= dx * 0.01;
-    
-    // Yuxarı-aşağı baxış (limitlərlə)
     inputState.cameraPitch -= dy * 0.01;
+    
+    // Kameranın tam yuxarı və aşağı baxması üçün limitləri tətbiq edirik
     if (inputState.cameraPitch > CONFIG.PITCH_MAX) {
       inputState.cameraPitch = CONFIG.PITCH_MAX;
     }
