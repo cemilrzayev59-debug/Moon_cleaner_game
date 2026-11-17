@@ -13,16 +13,15 @@ export function createDustSystem(scene) {
 
   const texture = new THREE.CanvasTexture(canvas);
   
-  // Düz səth üçün PlaneGeometry
-  const geo = new THREE.PlaneGeometry(CONFIG.SURFACE_SIZE, CONFIG.SURFACE_SIZE);
+  // Kürə üçün SphereGeometry (Ay səthindən bir az böyük)
+  const geo = new THREE.SphereGeometry(CONFIG.MOON_RADIUS + 0.1, 64, 64);
   const mat = new THREE.MeshBasicMaterial({ 
     map: texture, 
     transparent: true
   });
   
   const dustMesh = new THREE.Mesh(geo, mat);
-  dustMesh.rotation.x = -Math.PI / 2;
-  dustMesh.position.y = 0.1; 
+  dustMesh.position.y = -CONFIG.MOON_RADIUS;
   scene.add(dustMesh);
 
   return { canvas, ctx, texture, dustMesh };
@@ -39,8 +38,9 @@ export function updateDustSystem(dustSystem, uv, isBrushing, dt) {
 
   const { ctx, texture, canvas } = dustSystem;
   
+  // UV koordinatlarını kətan ölçüsünə çeviririk
   const canvasX = uv.x * canvas.width;
-  const canvasY = (1 - uv.y) * canvas.height;
+  const canvasY = (1 - uv.y) * canvas.height; // Three.js-də Y tərsdir
 
   const size = CONFIG.BRUSH_SIZE;
   
