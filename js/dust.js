@@ -1,4 +1,3 @@
-// Toz sistemi
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { tozToplA } from './state.js';
@@ -31,13 +30,11 @@ export function createDustSystem(scene) {
   return { group, patches };
 }
 
-export function updateDustSystem(dustSystem, playerPos, cameraYaw, isBrushing, dt) {
+// YENİ: brushPos birbaşa fırçanın koordinatıdır
+export function updateDustSystem(dustSystem, brushPos, isBrushing, dt) {
   if (!isBrushing) {
     return;
   }
-
-  const brushX = playerPos.x - Math.sin(cameraYaw) * 1.5;
-  const brushZ = playerPos.z - Math.cos(cameraYaw) * 1.5;
 
   for (let i = 0; i < dustSystem.patches.length; i++) {
     const patch = dustSystem.patches[i];
@@ -46,10 +43,12 @@ export function updateDustSystem(dustSystem, playerPos, cameraYaw, isBrushing, d
       continue;
     }
 
-    const dx = brushX - patch.position.x;
-    const dz = brushZ - patch.position.z;
+    // Fırça ilə toz arasındakı real məsafə
+    const dx = brushPos.x - patch.position.x;
+    const dz = brushPos.z - patch.position.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
 
+    // Əgər məsafə CLEAN_DISTANCE-dən kiçikdirsə (çox yaxındırsa)
     if (dist < CONFIG.CLEAN_DISTANCE) {
       patch.userData.amount -= CONFIG.CLEAN_SPEED * dt;
       
