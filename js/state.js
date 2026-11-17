@@ -1,4 +1,4 @@
-// Oyun vəziyyəti — Ekrandan və Three.js-dən asılı deyil.
+// Oyun vəziyyəti — Ekrandan və Three.js-dən asılı deyil
 import { CONFIG } from './config.js';
 
 export const GameState = {
