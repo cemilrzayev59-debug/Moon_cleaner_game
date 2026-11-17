@@ -1,4 +1,3 @@
-// Ay dünyası: səhnə, səma, səth, işıq
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 
@@ -22,10 +21,9 @@ export function createWorld() {
   const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, sizeAttenuation: false });
   scene.add(new THREE.Points(starGeo, starMat));
 
-  // ---- Ay səthi (Tam təmiz, düz boz) ----
+  // ---- Ay səthi (MeshBasicMaterial istifadə etdik ki, işıq və kölgə təsir etməsin) ----
   const groundGeo = new THREE.CircleGeometry(CONFIG.MOON_RADIUS, 64);
-  // flatShading silindi ki, işıq düşəndə ləkə-ləkə kölgə yaratmasın
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0 });
+  const groundMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa }); // Tam düz boz
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
