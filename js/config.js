@@ -1,19 +1,20 @@
 export const CONFIG = {
-  VERSION: 'v0.4.3',
-  MOON_RADIUS: 60,
-  PLAYER_SPEED: 6,          
+  VERSION: 'v0.4.4',
+  
+  // Ay çox böyük kürədir (Radius 500)
+  MOON_RADIUS: 500,
+  PLAYER_SPEED: 15,          
   JOYSTICK_RADIUS: 50,      
   BAG_CAPACITY: 100,
 
-  CAMERA_HEIGHT: 1.8,       
+  CAMERA_HEIGHT: 2.0,       
   PITCH_MIN: -1.4,          
   PITCH_MAX: 1.4,           
 
-  CANVAS_SIZE: 1024,        
+  // Kətan ölçüsü böyüdüldü ki, kürəni tam örtsün
+  CANVAS_SIZE: 2048,        
+  BRUSH_SIZE: 12,           
   
-  // Fırça ölçüsü (6x6 piksel - çox kiçik)
-  BRUSH_SIZE: 6,           
-  
-  // Hər silinən piksel üçün çantaya düşən toz (balans üçün)
-  DUST_YIELD: 0.04,           
+  // Çanta dolma sürəti yavaşladıldı (əvvəl 0.04 idi)
+  DUST_YIELD: 0.008,           
 };
