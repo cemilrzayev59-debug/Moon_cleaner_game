@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { createWorld } from './world.js';
-import { createPlayer, updatePlayer, getBrushWorldPosition } from './player.js';
+import { createPlayer, updatePlayer } from './player.js';
 import { setupControls, inputState } from './controls.js';
 import { updateHUD } from './ui.js';
 import { createDustSystem, updateDustSystem } from './dust.js';
@@ -13,7 +13,6 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
 
-// Far (uzaqlıq) artırıldı ki, böyük kürə görünsün
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
 camera.rotation.order = 'YXZ'; 
 
@@ -35,15 +34,19 @@ window.addEventListener('resize', () => {
 });
 
 function updateCamera() {
-  // Kamera oyunçunun üstündə, amma kürənin əyriliyinə uyğun
   camera.position.set(
     player.position.x,
     player.position.y + CONFIG.CAMERA_HEIGHT,
     player.position.z
   );
-  
   camera.rotation.set(inputState.cameraPitch, inputState.cameraYaw, 0);
 }
+
+// YENİ: Raycaster (Şüa atıcı) yaradırıq
+const raycaster = new THREE.Raycaster();
+// Fırçanın ekranda olduğu yer (sağ aşağı)
+// Ekranın mərkəzi (0,0)-dır. Sağ aşağı üçün X müsbət, Y mənfi olur.
+const brushNDC = new THREE.Vector2(0.2, -0.2); 
 
 const clock = new THREE.Clock();
 
@@ -53,9 +56,17 @@ function animate() {
 
   updatePlayer(player, inputState.joystick, inputState.cameraYaw, dt, inputState.actionPressed, brushGroup);
   
-  const brushPos = getBrushWorldPosition(brushGroup);
+  // Kameradan fırçanın istiqamətinə şüa göndəririk
+  raycaster.setFromCamera(brushNDC, camera);
   
-  updateDustSystem(dustSystem, brushPos, inputState.actionPressed, dt);
+  // Şüanın toz kürəsinə dəyib-dəymədiyini yoxlayırıq
+  const intersects = raycaster.intersectObject(dustSystem.dustMesh);
+  
+  if (intersects.length > 0) {
+    // Əgər dəyibsə, həmin nöqtənin dəqiq UV koordinatını alırıq
+    const uv = intersects[0].uv;
+    updateDustSystem(dustSystem, uv, inputState.actionPressed, dt);
+  }
   
   updateCamera();
   updateHUD();
