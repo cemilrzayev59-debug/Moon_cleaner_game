@@ -1,4 +1,3 @@
-// HUD-u (pul, çanta) yeniləyir
 import { GameState } from './state.js';
 
 export function updateHUD() {
