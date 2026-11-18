@@ -1,0 +1,79 @@
+import { CONFIG } from './config.js';
+
+const MAP_SIZE = 128;
+
+function mod1(value) {
+  return ((value % 1) + 1) % 1;
+}
+
+export function createMinimap() {
+  const canvas = document.getElementById('minimap');
+  canvas.width = MAP_SIZE;
+  canvas.height = MAP_SIZE;
+
+  const buffer = document.createElement('canvas');
+  buffer.width = MAP_SIZE;
+  buffer.height = MAP_SIZE;
+  const bufferCtx = buffer.getContext('2d');
+
+  return {
+    ctx: canvas.getContext('2d'),
+    buffer,
+    bufferCtx,
+    image: bufferCtx.createImageData(MAP_SIZE, MAP_SIZE),
+    label: document.getElementById('cleaned-percent'),
+    drawnVersion: -1,
+    lastRedraw: 0,
+  };
+}
+
+// Xəritə bütün dünyanı göstərir (dünya təkrarlandığı üçün oyunçu kənardan çıxanda qarşı tərəfdən görünür)
+export function updateMinimap(map, dust, playerPos, heading, nowMs) {
+  const grid = CONFIG.GRID;
+  const block = grid / MAP_SIZE;
+
+  // Təmizlənmiş yerlər dəyişəndə (və ən çox 4 dəfə saniyədə) xəritəni yenidən çəkirik
+  if (dust.version !== map.drawnVersion && nowMs - map.lastRedraw > 250) {
+    map.drawnVersion = dust.version;
+    map.lastRedraw = nowMs;
+
+    for (let y = 0; y < MAP_SIZE; y++) {
+      for (let x = 0; x < MAP_SIZE; x++) {
+        let cleanedCells = 0;
+        for (let by = 0; by < block; by++) {
+          const rowStart = (y * block + by) * grid + x * block;
+          for (let bx = 0; bx < block; bx++) {
+            cleanedCells += dust.cleaned[rowStart + bx];
+          }
+        }
+        const share = cleanedCells / (block * block);
+        const shade = 70 + share * 170;
+        const p = (y * MAP_SIZE + x) * 4;
+        map.image.data[p] = shade;
+        map.image.data[p + 1] = shade;
+        map.image.data[p + 2] = shade;
+        map.image.data[p + 3] = 255;
+      }
+    }
+    map.bufferCtx.putImageData(map.image, 0, 0);
+
+    const percent = (dust.cleanedCount / (grid * grid)) * 100;
+    map.label.textContent = 'Təmizlənib: ' + percent.toFixed(1) + '%';
+  }
+
+  map.ctx.drawImage(map.buffer, 0, 0);
+
+  // Oyunçunun yeri və baxdığı istiqamət
+  const dotX = mod1(playerPos.x / CONFIG.SURFACE_SIZE) * MAP_SIZE;
+  const dotY = mod1(playerPos.z / CONFIG.SURFACE_SIZE) * MAP_SIZE;
+  map.ctx.strokeStyle = '#ff4040';
+  map.ctx.lineWidth = 2;
+  map.ctx.beginPath();
+  map.ctx.moveTo(dotX, dotY);
+  map.ctx.lineTo(dotX + heading.x * 10, dotY + heading.z * 10);
+  map.ctx.stroke();
+  map.ctx.fillStyle = '#ff4040';
+  map.ctx.beginPath();
+  map.ctx.arc(dotX, dotY, 3.5, 0, Math.PI * 2);
+  map.ctx.fill();
+}
