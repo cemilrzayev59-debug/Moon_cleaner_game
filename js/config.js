@@ -20,5 +20,5 @@ export const CONFIG = {
 
   BRUSH_CELLS: 3,    // fırçanın ağzı: 3x3 kvadrat (0.75 vahid)
   REACH: 5,          // fırça nə qədər uzağa çatır
-  CELL_YIELD: 0.00004, // bir kvadratı təmizləyəndə çantaya düşən toz (kq)
+  CELL_YIELD: 0.00012, // bir kvadratı təmizləyəndə çantaya düşən toz (kq)
 };
