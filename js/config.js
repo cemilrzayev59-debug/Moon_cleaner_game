@@ -1,12 +1,15 @@
-export const CONFIG = {
-  VERSION: 'v0.6.0',
+const CELL = 0.25;          // bir toz kvadratının ölçüsü (dünya vahidi)
+const SURFACE_SIZE = 128;   // dünyanın təkrarlandığı ölçü (CELL-ə bölünməlidir)
 
-  SURFACE_SIZE: 256,     // toz xəritəsinin təkrar məsafəsi (dünya vahidi)
-  CANVAS_SIZE: 1024,
-  WINDOW_SIZE: 100,      // oyunçunun ətrafındakı 3D (qabarıq) toz sahəsi
-  WINDOW_SEGMENTS: 200,
-  FAR_SIZE: 2000,        // uzaqdakı yastı toz təbəqəsi
-  DUST_HEIGHT: 0.22,     // toz qatının qalınlığı
+export const CONFIG = {
+  VERSION: 'v0.7.0',
+
+  CELL,
+  SURFACE_SIZE,
+  GRID: SURFACE_SIZE / CELL,   // bir tərəfdə neçə toz kvadratı var (512)
+  WINDOW_CELLS: 96,            // oyunçunun ətrafındakı 3D qutu sahəsi (cüt ədəd olmalıdır)
+  FAR_SIZE: 2000,              // uzaqdakı yastı toz təbəqəsi
+  DUST_HEIGHT: 0.3,            // toz qatının qalınlığı
 
   PLAYER_SPEED: 15,
   JOYSTICK_RADIUS: 50,
@@ -15,7 +18,7 @@ export const CONFIG = {
   CAMERA_HEIGHT: 1.8,
   PITCH_LIMIT: 1.5,
 
-  BRUSH_RADIUS: 0.9,     // fırçanın təmizlədiyi dairənin radiusu
-  REACH: 6,              // fırça nə qədər uzağa çatır
-  DUST_YIELD: 0.00002,
+  BRUSH_CELLS: 3,    // fırçanın ağzı: 3x3 kvadrat (0.75 vahid)
+  REACH: 5,          // fırça nə qədər uzağa çatır
+  CELL_YIELD: 0.004, // bir kvadratı təmizləyəndə çantaya düşən toz (kq)
 };
