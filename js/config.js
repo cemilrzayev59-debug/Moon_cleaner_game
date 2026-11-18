@@ -8,12 +8,12 @@ export const CONFIG = {
   SURFACE_SIZE,
   GRID: SURFACE_SIZE / CELL,   // bir tərəfdə neçə toz kvadratı var (512)
   WINDOW_CELLS: 96,            // oyunçunun ətrafındakı 3D qutu sahəsi (cüt ədəd olmalıdır)
-  FAR_SIZE: 10000,              // uzaqdakı yastı toz təbəqəsi
+  FAR_SIZE: 2000,              // uzaqdakı yastı toz təbəqəsi
   DUST_HEIGHT: 0.15,            // toz qatının qalınlığı
 
   PLAYER_SPEED: 15,
   JOYSTICK_RADIUS: 50,
-  BAG_CAPACITY: 10.0, // 1 kq
+  BAG_CAPACITY: 1.0, // 1 kq
 
   CAMERA_HEIGHT: 1.8,
   PITCH_LIMIT: 1.5,
