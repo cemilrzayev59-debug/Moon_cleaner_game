@@ -1,5 +1,5 @@
-const CELL = 0.25;          // bir toz kvadratının ölçüsü (dünya vahidi)
-const SURFACE_SIZE = 128;   // dünyanın təkrarlandığı ölçü (CELL-ə bölünməlidir)
+const CELL = 0.10;          // bir toz kvadratının ölçüsü (dünya vahidi)
+const SURFACE_SIZE = 256;   // dünyanın təkrarlandığı ölçü (CELL-ə bölünməlidir)
 
 export const CONFIG = {
   VERSION: 'v0.7.0',
@@ -8,8 +8,8 @@ export const CONFIG = {
   SURFACE_SIZE,
   GRID: SURFACE_SIZE / CELL,   // bir tərəfdə neçə toz kvadratı var (512)
   WINDOW_CELLS: 96,            // oyunçunun ətrafındakı 3D qutu sahəsi (cüt ədəd olmalıdır)
-  FAR_SIZE: 2000,              // uzaqdakı yastı toz təbəqəsi
-  DUST_HEIGHT: 0.3,            // toz qatının qalınlığı
+  FAR_SIZE: 10000,              // uzaqdakı yastı toz təbəqəsi
+  DUST_HEIGHT: 0.15,            // toz qatının qalınlığı
 
   PLAYER_SPEED: 15,
   JOYSTICK_RADIUS: 50,
