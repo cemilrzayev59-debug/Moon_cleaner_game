@@ -3,7 +3,6 @@ import * as THREE from 'three';
 export function createPlayer(camera) {
   const brushGroup = new THREE.Group();
   
-  // Diş fırçası sapı
   const handle = new THREE.Mesh(
     new THREE.BoxGeometry(0.05, 0.6, 0.05),
     new THREE.MeshStandardMaterial({ color: 0xff3388, flatShading: true })
@@ -11,7 +10,6 @@ export function createPlayer(camera) {
   handle.position.y = 0.2;
   brushGroup.add(handle);
 
-  // Diş fırçası başlığı (qıllar)
   const bristles = new THREE.Mesh(
     new THREE.BoxGeometry(0.15, 0.05, 0.25),
     new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true })
