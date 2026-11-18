@@ -13,7 +13,7 @@ export const CONFIG = {
 
   PLAYER_SPEED: 15,
   JOYSTICK_RADIUS: 50,
-  BAG_CAPACITY: 1.0, // 1 kq
+  BAG_CAPACITY: 10.0, // 1 kq
 
   CAMERA_HEIGHT: 1.8,
   PITCH_LIMIT: 1.5,
