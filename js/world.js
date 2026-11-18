@@ -1,11 +1,10 @@
 import * as THREE from 'three';
-import { CONFIG } from './config.js';
 
 export function createWorld() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000008);
 
-  // Oyunçu ilə birlikdə hərəkət edən qrup: ulduzlar, Yer, uzaq dağlar
+  // Oyunçu ilə birlikdə hərəkət edən qrup: ulduzlar və Yer
   const sky = new THREE.Group();
   scene.add(sky);
 
@@ -29,19 +28,6 @@ export function createWorld() {
   );
   earth.position.set(600, 450, -1000);
   sky.add(earth);
-
-  // Üfüqdə alçaq poliqonlu dağlar
-  const hillMat = new THREE.MeshStandardMaterial({ color: 0xb8bcc8, flatShading: true });
-  const hillCount = 28;
-  for (let i = 0; i < hillCount; i++) {
-    const angle = (i / hillCount) * Math.PI * 2 + Math.random() * 0.1;
-    const dist = 800 + Math.random() * 100;
-    const hillHeight = 50 + Math.random() * 90;
-    const hillRadius = 100 + Math.random() * 100;
-    const hill = new THREE.Mesh(new THREE.ConeGeometry(hillRadius, hillHeight, 6), hillMat);
-    hill.position.set(Math.cos(angle) * dist, hillHeight / 2, Math.sin(angle) * dist);
-    sky.add(hill);
-  }
 
   // Ay səthi (təmiz yer): oyunçunu izləyir, ona görə dünya sonsuzdur
   const ground = new THREE.Mesh(
