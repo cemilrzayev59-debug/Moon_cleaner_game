@@ -5,6 +5,7 @@ import { createPlayer, updateBrush } from './player.js';
 import { setupControls, inputState } from './controls.js';
 import { updateHUD } from './ui.js';
 import { createDustSystem, updateDustWindow, updateDustSystem } from './dust.js';
+import { createMinimap, updateMinimap } from './minimap.js';
 import { sat } from './state.js';
 
 const container = document.getElementById('game-container');
@@ -22,6 +23,7 @@ world.scene.add(camera);
 
 const { brushGroup } = createPlayer(camera);
 const dustSystem = createDustSystem(world.scene);
+const minimap = createMinimap();
 
 setupControls();
 updateHUD();
@@ -50,10 +52,10 @@ const lookDir = new THREE.Vector3();
 const hitPoint = new THREE.Vector3();
 const clock = new THREE.Clock();
 
-// Baxış istiqaməti ilə yerin kəsişmə nöqtəsi (fırça çatmasa null)
+// Baxış istiqaməti ilə toz qatının üzünün kəsişmə nöqtəsi (fırça çatmasa null)
 function findGroundHit() {
   if (lookDir.y > -0.05) { return null; }
-  const distance = (CONFIG.DUST_HEIGHT * 0.5 - camera.position.y) / lookDir.y;
+  const distance = (CONFIG.DUST_HEIGHT - camera.position.y) / lookDir.y;
   if (distance > CONFIG.REACH) { return null; }
   return hitPoint.copy(camera.position).addScaledVector(lookDir, distance);
 }
@@ -61,6 +63,7 @@ function findGroundHit() {
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
+  const nowMs = performance.now();
 
   if (inputState.cameraYaw !== 0) {
     heading.applyAxisAngle(upVec, -inputState.cameraYaw);
@@ -82,7 +85,6 @@ function animate() {
   moveVec.addScaledVector(heading, inputState.joystick.y);
   moveVec.addScaledVector(rightVec, inputState.joystick.x);
 
-  // Artıq sərhəd yoxdur: oyunçu istədiyi qədər gedə bilər, dünya onunla birlikdə gedir
   if (moveVec.lengthSq() > 0.01) {
     moveVec.normalize();
     playerPos.addScaledVector(moveVec, CONFIG.PLAYER_SPEED * dt);
@@ -95,9 +97,10 @@ function animate() {
   camera.lookAt(camera.position.clone().add(lookDir));
 
   updateWorld(world, playerPos);
-  updateDustWindow(dustSystem, playerPos);
+  updateDustWindow(dustSystem, playerPos, nowMs);
   updateBrush(brushGroup, inputState.actionPressed, dt, clock.elapsedTime);
-  updateDustSystem(dustSystem, findGroundHit(), inputState.actionPressed, dt);
+  updateDustSystem(dustSystem, findGroundHit(), inputState.actionPressed);
+  updateMinimap(minimap, dustSystem, playerPos, heading, nowMs);
 
   updateHUD();
   renderer.render(world.scene, camera);
