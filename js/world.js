@@ -31,7 +31,7 @@ export function createWorld() {
 
   // Ay səthi (təmiz yer): oyunçunu izləyir, ona görə dünya sonsuzdur
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(10000, 10000),
+    new THREE.PlaneGeometry(2000, 2000),
     new THREE.MeshStandardMaterial({ color: 0xc4c8d2, roughness: 1.0 })
   );
   ground.rotation.x = -Math.PI / 2;
