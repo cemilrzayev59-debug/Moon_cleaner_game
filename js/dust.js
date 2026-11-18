@@ -2,60 +2,75 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { GameState, tozToplA } from './state.js';
 
-// 0-1 aralığına salır (mənfi ədədlər üçün də)
+const GRID = CONFIG.GRID;
+const CELL = CONFIG.CELL;
+const HEIGHT = CONFIG.DUST_HEIGHT;
+const WINDOW = CONFIG.WINDOW_CELLS;
+
+// Dünya xanasının nömrəsini xəritə daxilindəki nömrəyə çevirir (0..GRID-1)
+function wrapIndex(value) {
+  return ((value % GRID) + GRID) % GRID;
+}
+
 function mod1(value) {
   return ((value % 1) + 1) % 1;
 }
 
 export function createDustSystem(scene) {
-  const size = CONFIG.CANVAS_SIZE;
+  // Hər xananın boz tonu: qutular və uzaq təbəqə eyni rəngi görsün deyə
+  const shadeByte = new Uint8Array(GRID * GRID);
   const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-  // Toz xəritəsi: boz toz, təmizlənən yer şəffaf olur
-  ctx.fillStyle = '#8a8a8a';
-  ctx.fillRect(0, 0, size, size);
-  for (let i = 0; i < 30000; i++) {
-    ctx.fillStyle = Math.random() > 0.5 ? '#7c7c7c' : '#989898';
-    ctx.fillRect(Math.random() * size, Math.random() * size, 2, 2);
+  canvas.width = GRID;
+  canvas.height = GRID;
+  const ctx = canvas.getContext('2d');
+  const image = ctx.createImageData(GRID, GRID);
+  for (let j = 0; j < GRID; j++) {
+    for (let i = 0; i < GRID; i++) {
+      const hash = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453;
+      const shade = 118 + Math.floor((hash - Math.floor(hash)) * 30);
+      const index = j * GRID + i;
+      shadeByte[index] = shade;
+      image.data[index * 4] = shade;
+      image.data[index * 4 + 1] = shade;
+      image.data[index * 4 + 2] = shade;
+      image.data[index * 4 + 3] = 255;
+    }
   }
-  for (let i = 0; i < 300; i++) {
-    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-    ctx.beginPath();
-    ctx.arc(Math.random() * size, Math.random() * size, 6 + Math.random() * 18, 0, Math.PI * 2);
-    ctx.fill();
+  ctx.putImageData(image, 0, 0);
+
+  // sRGB rəngini linear rəngə çevirən cədvəl (qutuların rəngi üçün)
+  const linearOf = new Float32Array(256);
+  for (let v = 0; v < 256; v++) {
+    const s = v / 255;
+    linearOf[v] = s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   }
 
-  // Eyni şəkil iki teksturada: yaxın (3D) və uzaq (yastı) üçün
-  const texNear = new THREE.CanvasTexture(canvas);
-  texNear.wrapS = THREE.RepeatWrapping;
-  texNear.wrapT = THREE.RepeatWrapping;
-  const texFar = texNear.clone();
+  // Uzaq təbəqə: yastı, ortasında oyunçunun ətrafı üçün boşluq var
+  const texFar = new THREE.CanvasTexture(canvas);
+  texFar.colorSpace = THREE.SRGBColorSpace;
   texFar.wrapS = THREE.RepeatWrapping;
   texFar.wrapT = THREE.RepeatWrapping;
+  texFar.magFilter = THREE.NearestFilter;
+  texFar.repeat.set(1 / CONFIG.SURFACE_SIZE, 1 / CONFIG.SURFACE_SIZE);
 
-  // Yaxın hissə: toz qalınlığı displacementMap ilə həqiqətən qabarıq olur
-  const near = new THREE.Mesh(
-    new THREE.PlaneGeometry(CONFIG.WINDOW_SIZE, CONFIG.WINDOW_SIZE, CONFIG.WINDOW_SEGMENTS, CONFIG.WINDOW_SEGMENTS),
-    new THREE.MeshStandardMaterial({
-      map: texNear,
-      bumpMap: texNear,
-      bumpScale: 1,
-      displacementMap: texNear,
-      displacementScale: CONFIG.DUST_HEIGHT / 0.54,
-      alphaTest: 0.5,
-      roughness: 0.95,
-    })
-  );
-  near.rotation.x = -Math.PI / 2;
-  near.frustumCulled = false;
-  scene.add(near);
+  const outer = CONFIG.FAR_SIZE / 2;
+  const inner = (WINDOW * CELL) / 2 - 1;
+  const shape = new THREE.Shape();
+  shape.moveTo(-outer, -outer);
+  shape.lineTo(outer, -outer);
+  shape.lineTo(outer, outer);
+  shape.lineTo(-outer, outer);
+  shape.lineTo(-outer, -outer);
+  const hole = new THREE.Path();
+  hole.moveTo(-inner, -inner);
+  hole.lineTo(-inner, inner);
+  hole.lineTo(inner, inner);
+  hole.lineTo(inner, -inner);
+  hole.lineTo(-inner, -inner);
+  shape.holes.push(hole);
 
-  // Uzaq hissə: yastı, yalnız rəng görünür
   const far = new THREE.Mesh(
-    new THREE.PlaneGeometry(CONFIG.FAR_SIZE, CONFIG.FAR_SIZE),
+    new THREE.ShapeGeometry(shape),
     new THREE.MeshStandardMaterial({
       map: texFar,
       alphaTest: 0.5,
@@ -69,58 +84,173 @@ export function createDustSystem(scene) {
   far.frustumCulled = false;
   scene.add(far);
 
-  return { canvas, ctx, texNear, texFar, near, far };
+  // Yaxın hissə: hər toz kvadratı həqiqi 3D qutudur
+  const instanced = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshStandardMaterial({ roughness: 0.95 }),
+    WINDOW * WINDOW
+  );
+  instanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  instanced.setColorAt(0, new THREE.Color(1, 1, 1));
+  instanced.frustumCulled = false;
+  scene.add(instanced);
+
+  // Fırçanın təmizləyəcəyi yeri göstərən yaşıl kvadrat
+  const markerSize = CONFIG.BRUSH_CELLS * CELL;
+  const marker = new THREE.Mesh(
+    new THREE.PlaneGeometry(markerSize, markerSize),
+    new THREE.MeshBasicMaterial({ color: 0x66ffcc, transparent: true, opacity: 0.35, depthWrite: false })
+  );
+  marker.rotation.x = -Math.PI / 2;
+  marker.visible = false;
+  scene.add(marker);
+
+  return {
+    cleaned: new Uint8Array(GRID * GRID), // 1 = təmizlənib
+    cleanedCount: 0,
+    version: 0,
+    shadeByte,
+    linearOf,
+    ctx,
+    texFar,
+    far,
+    instanced,
+    marker,
+    originI: null,
+    originJ: null,
+    lastHit: null,
+    farDirty: false,
+    lastFarUpload: 0,
+  };
 }
 
-// Hər kadrda: toz sahəsi oyunçunun ardınca gedir, xəritə isə dünyaya sabit qalır
-export function updateDustWindow(dustSystem, playerPos) {
-  const S = CONFIG.SURFACE_SIZE;
-  const W = CONFIG.WINDOW_SIZE;
-  const F = CONFIG.FAR_SIZE;
-  const step = W / CONFIG.WINDOW_SEGMENTS;
+// Pəncərədəki (a, b) nömrəli qutunu xəritəyə uyğun yazır
+function writeInstance(dustSystem, a, b) {
+  const worldI = dustSystem.originI + a;
+  const worldJ = dustSystem.originJ + b;
+  const cellIndex = wrapIndex(worldJ) * GRID + wrapIndex(worldI);
+  const hasDust = dustSystem.cleaned[cellIndex] === 0;
 
-  // Təpə nöqtələri titrəməsin deyə şəbəkə addımına yuvarlaqlaşdırırıq
-  const centerX = Math.round(playerPos.x / step) * step;
-  const centerZ = Math.round(playerPos.z / step) * step;
-  dustSystem.near.position.set(centerX, 0, centerZ);
-  dustSystem.texNear.repeat.set(W / S, W / S);
-  dustSystem.texNear.offset.set(mod1((centerX - W / 2) / S), mod1(1 - (centerZ + W / 2) / S));
+  const matrix = dustSystem.instanced.instanceMatrix.array;
+  const color = dustSystem.instanced.instanceColor.array;
+  const k = b * WINDOW + a;
+  const m = k * 16;
 
-  dustSystem.far.position.set(playerPos.x, CONFIG.DUST_HEIGHT - 0.01, playerPos.z);
-  dustSystem.texFar.repeat.set(F / S, F / S);
-  dustSystem.texFar.offset.set(mod1((playerPos.x - F / 2) / S), mod1(1 - (playerPos.z + F / 2) / S));
+  matrix.fill(0, m, m + 16);
+  matrix[m] = CELL;
+  matrix[m + 5] = HEIGHT;
+  matrix[m + 10] = CELL;
+  matrix[m + 15] = 1;
+  matrix[m + 12] = (worldI + 0.5) * CELL;
+  matrix[m + 13] = hasDust ? HEIGHT / 2 : -50; // təmizlənən qutu yerin altına gedir
+  matrix[m + 14] = (worldJ + 0.5) * CELL;
+
+  const linear = dustSystem.linearOf[dustSystem.shadeByte[cellIndex]];
+  color[k * 3] = linear;
+  color[k * 3 + 1] = linear;
+  color[k * 3 + 2] = linear;
 }
 
-// hitPoint: fırçanın yerə dəydiyi dünya nöqtəsi (və ya null)
-export function updateDustSystem(dustSystem, hitPoint, isBrushing, dt) {
-  if (!isBrushing || !hitPoint || GameState.bag >= GameState.bagCapacity) {
+// Hər kadrda: qutular və uzaq təbəqə oyunçunun ardınca gedir
+export function updateDustWindow(dustSystem, playerPos, nowMs) {
+  dustSystem.far.position.set(playerPos.x, HEIGHT, playerPos.z);
+  dustSystem.texFar.offset.set(
+    mod1(playerPos.x / CONFIG.SURFACE_SIZE),
+    mod1(1 - playerPos.z / CONFIG.SURFACE_SIZE)
+  );
+
+  const originI = Math.floor(playerPos.x / CELL) - WINDOW / 2;
+  const originJ = Math.floor(playerPos.z / CELL) - WINDOW / 2;
+  if (originI !== dustSystem.originI || originJ !== dustSystem.originJ) {
+    dustSystem.originI = originI;
+    dustSystem.originJ = originJ;
+    for (let b = 0; b < WINDOW; b++) {
+      for (let a = 0; a < WINDOW; a++) {
+        writeInstance(dustSystem, a, b);
+      }
+    }
+    dustSystem.instanced.instanceMatrix.needsUpdate = true;
+    dustSystem.instanced.instanceColor.needsUpdate = true;
+  }
+
+  // Uzaq təbəqənin şəklini çox tez-tez yükləməmək üçün
+  if (dustSystem.farDirty && nowMs - dustSystem.lastFarUpload > 150) {
+    dustSystem.texFar.needsUpdate = true;
+    dustSystem.farDirty = false;
+    dustSystem.lastFarUpload = nowMs;
+  }
+}
+
+// Bir toz kvadratını təmizləyir və tozu çantaya əlavə edir
+function cleanCell(dustSystem, worldI, worldJ) {
+  const i = wrapIndex(worldI);
+  const j = wrapIndex(worldJ);
+  const index = j * GRID + i;
+  if (dustSystem.cleaned[index] === 1) { return; }
+  if (GameState.bag >= GameState.bagCapacity) { return; }
+
+  dustSystem.cleaned[index] = 1;
+  dustSystem.cleanedCount += 1;
+  dustSystem.version += 1;
+  tozToplA(CONFIG.CELL_YIELD);
+
+  dustSystem.ctx.clearRect(i, j, 1, 1);
+  dustSystem.farDirty = true;
+
+  const a = worldI - dustSystem.originI;
+  const b = worldJ - dustSystem.originJ;
+  if (a >= 0 && a < WINDOW && b >= 0 && b < WINDOW) {
+    writeInstance(dustSystem, a, b);
+    dustSystem.instanced.instanceMatrix.needsUpdate = true;
+  }
+}
+
+// Fırçanın ağzı boyda düzbucaqlı sahəni təmizləyir
+function cleanFootprint(dustSystem, x, z) {
+  const centerI = Math.floor(x / CELL);
+  const centerJ = Math.floor(z / CELL);
+  const start = Math.floor(CONFIG.BRUSH_CELLS / 2);
+  for (let dj = 0; dj < CONFIG.BRUSH_CELLS; dj++) {
+    for (let di = 0; di < CONFIG.BRUSH_CELLS; di++) {
+      cleanCell(dustSystem, centerI - start + di, centerJ - start + dj);
+    }
+  }
+}
+
+// hitPoint: fırçanın yerə dəydiyi dünya nöqtəsi (çatmırsa null)
+export function updateDustSystem(dustSystem, hitPoint, isBrushing) {
+  dustSystem.marker.visible = hitPoint !== null;
+  if (hitPoint === null) {
+    dustSystem.lastHit = null;
     return;
   }
 
-  const { ctx, canvas, texNear, texFar } = dustSystem;
-  const S = CONFIG.SURFACE_SIZE;
-  const canvasX = mod1(hitPoint.x / S) * canvas.width;
-  const canvasY = mod1(hitPoint.z / S) * canvas.height;
+  const start = Math.floor(CONFIG.BRUSH_CELLS / 2);
+  const centerI = Math.floor(hitPoint.x / CELL);
+  const centerJ = Math.floor(hitPoint.z / CELL);
+  dustSystem.marker.position.set(
+    (centerI - start + CONFIG.BRUSH_CELLS / 2) * CELL,
+    HEIGHT + 0.02,
+    (centerJ - start + CONFIG.BRUSH_CELLS / 2) * CELL
+  );
 
-  // Mərkəz pikselində toz varsa, çantaya toz əlavə olunur
-  const pixel = ctx.getImageData(Math.floor(canvasX), Math.floor(canvasY), 1, 1).data;
-  if (pixel[3] > 0) {
-    tozToplA(CONFIG.DUST_YIELD * dt * 60);
+  if (!isBrushing) {
+    dustSystem.lastHit = null;
+    return;
   }
 
-  // Dairəvi silmə; kənarlarda xəritə təkrarlandığı üçün 9 yerdə silirik
-  const radius = (CONFIG.BRUSH_RADIUS / S) * canvas.width;
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillStyle = 'black';
-  for (let shiftX = -1; shiftX <= 1; shiftX++) {
-    for (let shiftY = -1; shiftY <= 1; shiftY++) {
-      ctx.beginPath();
-      ctx.arc(canvasX + shiftX * canvas.width, canvasY + shiftY * canvas.height, radius, 0, Math.PI * 2);
-      ctx.fill();
+  // Sürətlə hərəkət edəndə boşluq qalmasın deyə aradakı yerləri də təmizləyirik
+  const from = dustSystem.lastHit;
+  if (from !== null) {
+    const distance = Math.hypot(hitPoint.x - from.x, hitPoint.z - from.z);
+    if (distance < 3) {
+      const steps = Math.ceil(distance / CELL);
+      for (let step = 1; step < steps; step++) {
+        const t = step / steps;
+        cleanFootprint(dustSystem, from.x + (hitPoint.x - from.x) * t, from.z + (hitPoint.z - from.z) * t);
+      }
     }
   }
-  ctx.globalCompositeOperation = 'source-over';
-
-  texNear.needsUpdate = true;
-  texFar.needsUpdate = true;
+  cleanFootprint(dustSystem, hitPoint.x, hitPoint.z);
+  dustSystem.lastHit = { x: hitPoint.x, z: hitPoint.z };
 }
