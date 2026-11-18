@@ -17,33 +17,13 @@ function mod1(value) {
 }
 
 export function createDustSystem(scene) {
-  // Hər xananın boz tonu: qutular və uzaq təbəqə eyni rəngi görsün deyə
-  const shadeByte = new Uint8Array(GRID * GRID);
+  // Toz təbəqəsinin şəkli: hər yer eyni rəngdədir, təmizlənən yer şəffaf olur
   const canvas = document.createElement('canvas');
   canvas.width = GRID;
   canvas.height = GRID;
   const ctx = canvas.getContext('2d');
-  const image = ctx.createImageData(GRID, GRID);
-  for (let j = 0; j < GRID; j++) {
-    for (let i = 0; i < GRID; i++) {
-      const hash = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453;
-      const shade = 118 + Math.floor((hash - Math.floor(hash)) * 30);
-      const index = j * GRID + i;
-      shadeByte[index] = shade;
-      image.data[index * 4] = shade;
-      image.data[index * 4 + 1] = shade;
-      image.data[index * 4 + 2] = shade;
-      image.data[index * 4 + 3] = 255;
-    }
-  }
-  ctx.putImageData(image, 0, 0);
-
-  // sRGB rəngini linear rəngə çevirən cədvəl (qutuların rəngi üçün)
-  const linearOf = new Float32Array(256);
-  for (let v = 0; v < 256; v++) {
-    const s = v / 255;
-    linearOf[v] = s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  }
+  ctx.fillStyle = '#' + CONFIG.DUST_COLOR.toString(16).padStart(6, '0');
+  ctx.fillRect(0, 0, GRID, GRID);
 
   // Uzaq təbəqə: yastı, ortasında oyunçunun ətrafı üçün boşluq var
   const texFar = new THREE.CanvasTexture(canvas);
@@ -87,11 +67,10 @@ export function createDustSystem(scene) {
   // Yaxın hissə: hər toz kvadratı həqiqi 3D qutudur
   const instanced = new THREE.InstancedMesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({ roughness: 0.95 }),
+    new THREE.MeshStandardMaterial({ color: CONFIG.DUST_COLOR, roughness: 0.95 }),
     WINDOW * WINDOW
   );
   instanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  instanced.setColorAt(0, new THREE.Color(1, 1, 1));
   instanced.frustumCulled = false;
   scene.add(instanced);
 
@@ -109,8 +88,6 @@ export function createDustSystem(scene) {
     cleaned: new Uint8Array(GRID * GRID), // 1 = təmizlənib
     cleanedCount: 0,
     version: 0,
-    shadeByte,
-    linearOf,
     ctx,
     texFar,
     far,
@@ -132,9 +109,7 @@ function writeInstance(dustSystem, a, b) {
   const hasDust = dustSystem.cleaned[cellIndex] === 0;
 
   const matrix = dustSystem.instanced.instanceMatrix.array;
-  const color = dustSystem.instanced.instanceColor.array;
-  const k = b * WINDOW + a;
-  const m = k * 16;
+  const m = (b * WINDOW + a) * 16;
 
   matrix.fill(0, m, m + 16);
   matrix[m] = CELL;
@@ -144,11 +119,6 @@ function writeInstance(dustSystem, a, b) {
   matrix[m + 12] = (worldI + 0.5) * CELL;
   matrix[m + 13] = hasDust ? HEIGHT / 2 : -50; // təmizlənən qutu yerin altına gedir
   matrix[m + 14] = (worldJ + 0.5) * CELL;
-
-  const linear = dustSystem.linearOf[dustSystem.shadeByte[cellIndex]];
-  color[k * 3] = linear;
-  color[k * 3 + 1] = linear;
-  color[k * 3 + 2] = linear;
 }
 
 // Hər kadrda: qutular və uzaq təbəqə oyunçunun ardınca gedir
@@ -170,7 +140,6 @@ export function updateDustWindow(dustSystem, playerPos, nowMs) {
       }
     }
     dustSystem.instanced.instanceMatrix.needsUpdate = true;
-    dustSystem.instanced.instanceColor.needsUpdate = true;
   }
 
   // Uzaq təbəqənin şəklini çox tez-tez yükləməmək üçün
