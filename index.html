@@ -5,6 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Ayın Səthini Təmizləmək</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .choose-btn { touch-action: manipulation; }
+    #err-box {
+      display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 300;
+      background: #7f1d1d; color: #fff; font: 12px monospace; padding: 8px; white-space: pre-wrap;
+    }
+  </style>
+
+  <script>
+    function showErr(text) {
+      var box = document.getElementById('err-box');
+      if (!box) { return; }
+      box.style.display = 'block';
+      box.textContent += text + '\n';
+    }
+    window.addEventListener('error', function (e) {
+      showErr('Xəta: ' + (e.message || 'naməlum') + (e.filename ? ' @ ' + e.filename.split('/').pop() + ':' + e.lineno : ''));
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      showErr('Promise xətası: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+    });
+  </script>
+
   <script async src="https://cdn.jsdelivr.net/npm/es-module-shims@1.8.3/dist/es-module-shims.js"></script>
   <script type="importmap">
   {
@@ -16,23 +39,8 @@
   </script>
 </head>
 <body>
-  <div id="err-box" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:300;background:#7f1d1d;color:#fff;font:12px monospace;padding:8px;white-space:pre-wrap"></div>
-<script>
-  function showErr(text) {
-    var box = document.getElementById('err-box');
-    box.style.display = 'block';
-    box.textContent += text + '\n';
-  }
-  window.addEventListener('error', function (e) {
-    showErr((e.message || 'Xəta') + (e.filename ? ' @ ' + e.filename.split('/').pop() + ':' + e.lineno : ''));
-  });
-  window.addEventListener('unhandledrejection', function (e) {
-    showErr('Promise xətası: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
-  });
-  setTimeout(function () {
-    if (!window.__gameLoaded) { showErr('JS yüklənmədi (importmap və ya şəbəkə problemi)'); }
-  }, 4000);
-</script>
+  <div id="err-box"></div>
+
   <div id="game-container"></div>
   <div id="hud">
     <div id="hud-money">💰 0</div>
@@ -44,33 +52,4 @@
     <canvas id="minimap" width="128" height="128"></canvas>
     <div id="cleaned-percent">Təmizlənib: 0.0%</div>
     <div id="chunk-info">Parça: 0%</div>
-    <div id="base-info">Baza: 0 m</div>
-  </div>
-
-  <div id="toast"></div>
-  <div id="pc-hint"></div>
-
-  <div id="shop-panel">
-    <div id="shop-title"></div>
-    <div id="shop-info"></div>
-    <button id="shop-buy">Al</button>
-  </div>
-
-  <div id="joystick-base">
-    <div id="joystick-knob"></div>
-  </div>
-  <div id="camera-area"></div>
-  <button id="action-btn" oncontextmenu="return false;">🪥</button>
-
-  <div id="start-screen">
-    <div id="start-box">
-      <h1>Ayın Səthini Təmizləmək</h1>
-      <p>Hansı cihazda oynayırsan?</p>
-      <button id="choose-phone" class="choose-btn">📱 Telefon</button>
-      <button id="choose-pc" class="choose-btn">💻 Kompüter</button>
-    </div>
-  </div>
-
-  <script type="module" src="js/main.js"></script>
-</body>
-</html>
+    <div
