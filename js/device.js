@@ -22,6 +22,6 @@ export function chooseDevice(onChosen) {
     onChosen(device);
   }
 
-  phoneButton.addEventListener('click', () => { pick('phone'); });
-  pcButton.addEventListener('click', () => { pick('pc'); });
+  phoneButton.addEventListener('pointerup', () => { pick('phone'); });
+  pcButton.addEventListener('pointerup', () => { pick('pc'); });
 }
