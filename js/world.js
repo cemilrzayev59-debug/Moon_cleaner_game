@@ -47,7 +47,7 @@ export function createWorld() {
   return { scene, sky, ground };
 }
 
-// Hər kadrda çağırılır: göy və yer oyunçunun ardınca gedir
+// Hər kadrda çağırılır: göy və yer oyunçunun ardınca gedireufeyfgey
 export function updateWorld(world, playerPos) {
   world.sky.position.set(playerPos.x, 0, playerPos.z);
   world.ground.position.set(playerPos.x, 0, playerPos.z);
