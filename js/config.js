@@ -2,7 +2,7 @@ const CELL = 0.15;          // təmizlik izləmə şəbəkəsinin xana ölçüs�
 const SURFACE_SIZE = 192;   // dünyanın təkrarlandığı ölçü
 
 export const CONFIG = {
-  VERSION: 'v0.8.0',
+  VERSION: 'v0.8.1',
 
   CELL,
   SURFACE_SIZE,
@@ -20,8 +20,7 @@ export const CONFIG = {
   CAMERA_HEIGHT: 1.8,
   PITCH_LIMIT: 1.5,
 
-  BRUSH_WIDTH: 0.8,  // fırçanın eni (zolağın eni)
-  BRUSH_DEPTH: 0.5,  // fırçanın irəli uzunluğu
+  BRUSH_SIZE: 0.8,   // fırçanın ağzı: düz kvadrat (en və uzunluq eynidir)
   REACH: 5,          // fırça nə qədər uzağa çatır
   KG_PER_SQUARE_UNIT: 0.02, // 1 kvadrat vahid təmizləyəndə düşən toz (kq); kiçik = çanta yavaş dolur
 };
