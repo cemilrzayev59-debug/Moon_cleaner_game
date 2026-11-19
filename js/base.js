@@ -1,25 +1,11 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
-import {
-  GameState, sat, getBrushTool, getNextBrushTool, getNextBagLevel,
-  buyBrushUpgrade, buyBagUpgrade,
-} from './state.js';
+import { GameState, sellDust } from './state.js';
+import { createShopPanel, updateShopPanel } from './shop.js';
+import { showToast } from './ui.js';
 import { saveGame } from './save.js';
 
-let toastTimer = null;
-
-// Ekranın yuxarısında qısa mesaj göstərir
-export function showToast(text) {
-  const toast = document.getElementById('toast');
-  toast.textContent = text;
-  toast.classList.add('show');
-  if (toastTimer !== null) { clearTimeout(toastTimer); }
-  toastTimer = setTimeout(() => {
-    toast.classList.remove('show');
-    toastTimer = null;
-  }, 1800);
-}
-
+// Sahənin üstündə görünən yazı lövhəsi
 function makeLabel(text) {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
@@ -81,78 +67,13 @@ export function createBase(scene) {
     zones.push({ id: pad.id, x, z });
   }
 
-  const base = {
-    zones,
-    activeId: null,
-    lastPanelKey: '',
-    panel: document.getElementById('shop-panel'),
-    panelTitle: document.getElementById('shop-title'),
-    panelInfo: document.getElementById('shop-info'),
-    buyButton: document.getElementById('shop-buy'),
-  };
-
-  base.buyButton.addEventListener('click', () => {
-    let result = null;
-    if (base.activeId === 'tool') {
-      result = buyBrushUpgrade();
-    } else if (base.activeId === 'bag') {
-      result = buyBagUpgrade();
-    }
-    if (result !== null) {
-      showToast(result.message);
-      if (result.ok) { saveGame(); }
-      base.lastPanelKey = '';
-    }
-  });
-
-  return base;
+  return { zones, shop: createShopPanel() };
 }
 
 // Oyunçu bazadadırmı (bazanın üstündə fırça işləmir)
 export function isInsideBase(x, z) {
   return Math.abs(x - CONFIG.BASE_X) <= CONFIG.BASE_WIDTH / 2 + 0.5
     && Math.abs(z - CONFIG.BASE_Z) <= CONFIG.BASE_DEPTH / 2 + 0.5;
-}
-
-function renderPanel(base, id) {
-  let title = '';
-  let info = '';
-  let price = null;
-
-  if (id === 'tool') {
-    const current = getBrushTool();
-    const next = getNextBrushTool();
-    title = 'Alət yeniləməsi';
-    if (next === null) {
-      info = current.name + ' (' + current.size + ' m): ən güclü alətdir';
-    } else {
-      info = current.name + ' (' + current.size + ' m) → ' + next.name + ' (' + next.size + ' m)';
-      price = next.price;
-    }
-  } else {
-    const next = getNextBagLevel();
-    title = 'Çanta yeniləməsi';
-    if (next === null) {
-      info = 'Çanta: ' + GameState.bagCapacity + ' kq (maksimum)';
-    } else {
-      info = 'Çanta: ' + GameState.bagCapacity + ' kq → ' + next.capacity + ' kq';
-      price = next.price;
-    }
-  }
-
-  const key = id + '|' + info + '|' + price + '|' + Math.floor(GameState.money);
-  if (key === base.lastPanelKey) { return; }
-  base.lastPanelKey = key;
-
-  base.panelTitle.textContent = title;
-  base.panelInfo.textContent = info;
-  if (price === null) {
-    base.buyButton.textContent = 'Maksimum';
-    base.buyButton.disabled = true;
-  } else {
-    base.buyButton.textContent = 'Al: ' + price + ' 💰';
-    base.buyButton.disabled = GameState.money < price;
-  }
 }
 
 // Hər kadrda: oyunçu hansı sahədədir? Satış avtomatikdir, yeniləmələr üçün panel açılır
@@ -163,19 +84,12 @@ export function updateBase(base, playerPos) {
       activeId = zone.id;
     }
   }
-  base.activeId = activeId;
 
   if (activeId === 'sell' && GameState.bag > 0.0001) {
-    const result = sat(CONFIG.SELL_PRICE_PER_KG);
-    showToast('Satıldı: ' + result.satilan.toFixed(2) + ' kq, +' + result.qazanc + ' 💰');
+    const result = sellDust(CONFIG.SELL_PRICE_PER_KG);
+    showToast('Satıldı: ' + result.sold.toFixed(2) + ' kq, +' + result.earned + ' 💰');
     saveGame();
   }
 
-  if (activeId === 'tool' || activeId === 'bag') {
-    renderPanel(base, activeId);
-    base.panel.classList.add('show');
-  } else {
-    base.panel.classList.remove('show');
-    base.lastPanelKey = '';
-  }
+  updateShopPanel(base.shop, activeId);
 }
