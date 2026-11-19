@@ -16,6 +16,23 @@
   </script>
 </head>
 <body>
+  <div id="err-box" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:300;background:#7f1d1d;color:#fff;font:12px monospace;padding:8px;white-space:pre-wrap"></div>
+<script>
+  function showErr(text) {
+    var box = document.getElementById('err-box');
+    box.style.display = 'block';
+    box.textContent += text + '\n';
+  }
+  window.addEventListener('error', function (e) {
+    showErr((e.message || 'Xəta') + (e.filename ? ' @ ' + e.filename.split('/').pop() + ':' + e.lineno : ''));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    showErr('Promise xətası: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+  setTimeout(function () {
+    if (!window.__gameLoaded) { showErr('JS yüklənmədi (importmap və ya şəbəkə problemi)'); }
+  }, 4000);
+</script>
   <div id="game-container"></div>
   <div id="hud">
     <div id="hud-money">💰 0</div>
