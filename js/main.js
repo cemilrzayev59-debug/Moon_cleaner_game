@@ -131,5 +131,5 @@ function startGame(device) {
 
   animate();
 }
-
+window.__gameLoaded = true;
 chooseDevice(startGame);
