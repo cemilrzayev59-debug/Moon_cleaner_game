@@ -112,7 +112,7 @@ export function startGame(device) {
     updateBase(base, playerPos);
     updateMinimap(minimap, dustSystem, playerPos, heading, nowMs);
 
-    // Parça tamamlananda mesaj
+    // Parça tamamlananda mesajhhththt
     if (dustSystem.rewardPending > 0) {
       showToast('Parça təmizləndi! +' + dustSystem.rewardPending + ' 💰');
       dustSystem.rewardPending = 0;
