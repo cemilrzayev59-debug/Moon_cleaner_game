@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from './three.js';
 import { GameState } from './state.js';
 
 // Qutu şəklində bir hissə düzəldir (en, hündürlük, dərinlik, rəng, yer)
@@ -110,7 +110,7 @@ export function createPlayer(camera) {
   return { brushGroup };
 }
 
-// Təmizləyəndə fırça yumşaq şəkildə aşağı əyilir və yana-yana süpürürgfyg
+// Təmizləyəndə fırça yumşaq şəkildə aşağı əyilir və yana-yana süpürür
 export function updateBrush(brushGroup, isCleaning, dt, time) {
   const data = brushGroup.userData;
 
