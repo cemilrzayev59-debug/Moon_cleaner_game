@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from './three.js';
 import { CONFIG } from './config.js';
 import { applyUpgrades } from './upgrades.js';
 import { loadGame, saveGame, startAutoSave } from './save.js';
@@ -11,13 +11,12 @@ import { updateDustSystem } from './cleaning.js';
 import { getChunkProgress } from './chunks.js';
 import { createMinimap, updateMinimap } from './minimap.js';
 import { createBase, updateBase, isInsideBase } from './base.js';
-import { chooseDevice } from './device.js';
 
 // Versiya nömrəsi başlanğıc ekranında da görünsün
 document.getElementById('version-tag').textContent = CONFIG.VERSION;
 
-// Oyunu seçilmiş cihaza ('phone' və ya 'pc') görə işə salır
-function startGame(device) {
+// Oyunu seçilmiş cihaza ('phone' və ya 'pc') görə işə salır (boot.js çağırır)
+export function startGame(device) {
   loadGame();
   applyUpgrades();
 
@@ -120,7 +119,7 @@ function startGame(device) {
       saveGame();
     }
 
-    // Parça faizi və bazaya məsafəgrgrg
+    // Parça faizi və bazaya məsafə
     const target = hit !== null ? hit : playerPos;
     const baseMeters = Math.round(Math.hypot(playerPos.x - CONFIG.BASE_X, playerPos.z - CONFIG.BASE_Z));
     updateInfoLabels(getChunkProgress(dustSystem, target.x, target.z), baseMeters);
@@ -131,5 +130,3 @@ function startGame(device) {
 
   animate();
 }
-
-chooseDevice(startGame);
