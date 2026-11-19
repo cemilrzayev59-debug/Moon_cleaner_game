@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from './three.js';
 import { CONFIG } from './config.js';
 import { GameState, sellDust } from './state.js';
 import { createShopPanel, updateShopPanel } from './shop.js';
