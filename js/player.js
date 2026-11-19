@@ -110,7 +110,7 @@ export function createPlayer(camera) {
   return { brushGroup };
 }
 
-// Təmizləyəndə fırça yumşaq şəkildə aşağı əyilir və yana-yana süpürür
+// Təmizləyəndə fırça yumşaq şəkildə aşağı əyilir və yana-yana süpürürgfyg
 export function updateBrush(brushGroup, isCleaning, dt, time) {
   const data = brushGroup.userData;
 
