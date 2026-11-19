@@ -5,14 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Ayın Səthini Təmizləmək</title>
   <link rel="stylesheet" href="css/style.css">
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-    }
-  }
-  </script>
 </head>
 <body>
   <div id="game-container"></div>
@@ -20,7 +12,7 @@
     <div id="hud-money">💰 0</div>
     <div id="hud-bag">🎒 0.00/1.00 kq</div>
   </div>
-  <div id="version-tag">v0.9.2</div>
+  <div id="version-tag">v0.9.3</div>
 
   <div id="minimap-box">
     <canvas id="minimap" width="128" height="128"></canvas>
@@ -48,11 +40,13 @@
     <div id="start-box">
       <h1>Ayın Səthini Təmizləmək</h1>
       <p>Hansı cihazda oynayırsan?</p>
-      <button id="choose-phone" class="choose-btn">📱 Telefon</button>
-      <button id="choose-pc" class="choose-btn">💻 Kompüter</button>
+      <button id="choose-phone" class="choose-btn" type="button">📱 Telefon</button>
+      <button id="choose-pc" class="choose-btn" type="button">💻 Kompüter</button>
+      <div id="start-status">Oyun faylları yüklənir...</div>
     </div>
   </div>
 
-  <script type="module" src="js/main.js"></script>
+  <!-- Klassik skript (module deyil): düymələr həmişə işləsin deyə -->
+  <script src="js/boot.js"></script>
 </body>
 </html>
