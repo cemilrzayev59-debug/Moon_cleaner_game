@@ -30,7 +30,6 @@ export function createMinimap() {
 // Xəritə bütün dünyanı göstərir (dünya təkrarlandığı üçün oyunçu kənardan çıxanda qarşı tərəfdən görünür)
 export function updateMinimap(map, dust, playerPos, heading, nowMs) {
   const grid = CONFIG.GRID;
-  const block = grid / MAP_SIZE;
 
   // Təmizlənmiş yerlər dəyişəndə (və ən çox 4 dəfə saniyədə) xəritəni yenidən çəkirik
   if (dust.version !== map.drawnVersion && nowMs - map.lastRedraw > 250) {
@@ -38,15 +37,19 @@ export function updateMinimap(map, dust, playerPos, heading, nowMs) {
     map.lastRedraw = nowMs;
 
     for (let y = 0; y < MAP_SIZE; y++) {
+      const rowFrom = Math.floor((y * grid) / MAP_SIZE);
+      const rowTo = Math.floor(((y + 1) * grid) / MAP_SIZE);
       for (let x = 0; x < MAP_SIZE; x++) {
+        const colFrom = Math.floor((x * grid) / MAP_SIZE);
+        const colTo = Math.floor(((x + 1) * grid) / MAP_SIZE);
         let cleanedCells = 0;
-        for (let by = 0; by < block; by++) {
-          const rowStart = (y * block + by) * grid + x * block;
-          for (let bx = 0; bx < block; bx++) {
-            cleanedCells += dust.cleaned[rowStart + bx];
+        for (let row = rowFrom; row < rowTo; row++) {
+          const rowStart = row * grid;
+          for (let col = colFrom; col < colTo; col++) {
+            cleanedCells += dust.cleaned[rowStart + col];
           }
         }
-        const share = cleanedCells / (block * block);
+        const share = cleanedCells / ((rowTo - rowFrom) * (colTo - colFrom));
         const shade = 70 + share * 170;
         const p = (y * MAP_SIZE + x) * 4;
         map.image.data[p] = shade;
