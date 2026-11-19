@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from './three.js';
 
 export function createWorld() {
   const scene = new THREE.Scene();
@@ -47,7 +47,7 @@ export function createWorld() {
   return { scene, sky, ground };
 }
 
-// Hər kadrda çağırılır: göy və yer oyunçunun ardınca gedireufeyfgey
+// Hər kadrda çağırılır: göy və yer oyunçunun ardınca gedir
 export function updateWorld(world, playerPos) {
   world.sky.position.set(playerPos.x, 0, playerPos.z);
   world.ground.position.set(playerPos.x, 0, playerPos.z);
