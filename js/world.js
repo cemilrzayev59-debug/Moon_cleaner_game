@@ -35,6 +35,8 @@ export function createWorld() {
     new THREE.MeshStandardMaterial({ color: 0xc4c8d2, roughness: 1.0 })
   );
   ground.rotation.x = -Math.PI / 2;
+  ground.material.depthWrite = false; // uzaqda titrəməsin deyə yer ilk çəkilir
+  ground.renderOrder = -1;
   scene.add(ground);
 
   const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
