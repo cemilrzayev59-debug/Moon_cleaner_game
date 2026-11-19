@@ -22,6 +22,9 @@ export function chooseDevice(onChosen) {
     onChosen(device);
   }
 
+  // Həm toxunuş, həm siçan üçün; "chosen" təkrar işə düşməyin qarşısını alır
   phoneButton.addEventListener('pointerup', () => { pick('phone'); });
   pcButton.addEventListener('pointerup', () => { pick('pc'); });
+  phoneButton.addEventListener('click', () => { pick('phone'); });
+  pcButton.addEventListener('click', () => { pick('pc'); });
 }
