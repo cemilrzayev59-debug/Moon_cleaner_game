@@ -99,7 +99,7 @@ function animate() {
   updateWorld(world, playerPos);
   updateDustWindow(dustSystem, playerPos, nowMs);
   updateBrush(brushGroup, inputState.actionPressed, dt, clock.elapsedTime);
-  updateDustSystem(dustSystem, findGroundHit(), inputState.actionPressed);
+  updateDustSystem(dustSystem, findGroundHit(), heading, inputState.actionPressed);
   updateMinimap(minimap, dustSystem, playerPos, heading, nowMs);
 
   updateHUD();
