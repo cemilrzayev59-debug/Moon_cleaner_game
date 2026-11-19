@@ -1,4 +1,5 @@
 import { CONFIG } from './config.js';
+import { setupKeyboardControls } from './keyboard.js';
 
 export const inputState = {
   joystick: { x: 0, y: 0 },
@@ -7,7 +8,17 @@ export const inputState = {
   actionPressed: false,
 };
 
-export function setupControls() {
+// Seçilmiş cihaza görə idarəetməni qoşur: 'pc' = klaviatura və siçan, 'phone' = toxunuş
+export function setupControls(device) {
+  if (device === 'pc') {
+    setupKeyboardControls(inputState);
+  } else {
+    setupTouchControls();
+  }
+}
+
+// Telefon idarəsi: virtual joystick, kamera sahəsi, təmizləmə düyməsi
+function setupTouchControls() {
   const joyBase = document.getElementById('joystick-base');
   const joyKnob = document.getElementById('joystick-knob');
   const camArea = document.getElementById('camera-area');
@@ -47,7 +58,7 @@ export function setupControls() {
     joyBase.setPointerCapture(e.pointerId);
     updateJoystick(e);
   });
-  
+
   joyBase.addEventListener('pointermove', (e) => {
     if (e.pointerId !== joyPointerId) { return; }
     updateJoystick(e);
@@ -75,11 +86,11 @@ export function setupControls() {
     const dy = e.clientY - camLastY;
     camLastX = e.clientX;
     camLastY = e.clientY;
-    
-    inputState.cameraYaw += dx * 0.005; 
-    // DÜZƏLİŞ: + yerinə - yazdıq ki, barmaq aşağı çəkəndə kamera aşağı baxsın
-    inputState.cameraPitch -= dy * 0.005; 
-    
+
+    inputState.cameraYaw += dx * CONFIG.TOUCH_SENSITIVITY;
+    // Barmaq aşağı çəkəndə kamera aşağı baxsın
+    inputState.cameraPitch -= dy * CONFIG.TOUCH_SENSITIVITY;
+
     if (inputState.cameraPitch > CONFIG.PITCH_LIMIT) { inputState.cameraPitch = CONFIG.PITCH_LIMIT; }
     if (inputState.cameraPitch < -CONFIG.PITCH_LIMIT) { inputState.cameraPitch = -CONFIG.PITCH_LIMIT; }
   });
@@ -92,16 +103,16 @@ export function setupControls() {
   camArea.addEventListener('pointercancel', endCam);
 
   actionBtn.addEventListener('pointerdown', (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
     actionBtn.setPointerCapture(e.pointerId);
     inputState.actionPressed = true;
   });
-  
+
   actionBtn.addEventListener('pointerup', (e) => {
     e.preventDefault();
     inputState.actionPressed = false;
   });
-  
+
   actionBtn.addEventListener('pointercancel', () => {
     inputState.actionPressed = false;
   });
