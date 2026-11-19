@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 
 export const GameState = {
+  playerId: 'local',   // hələlik tək oyunçu; multiplayer-də hər oyunçunun öz ID-si olacaq
   money: 0,
   bag: 0,
   bagCapacity: CONFIG.BAG_LEVELS[0].capacity,
@@ -11,68 +12,82 @@ export const GameState = {
   },
 };
 
-// Səviyyələr dəyişəndən və ya yüklənəndən sonra çağırılır
-export function applyUpgrades() {
-  const maxBrush = CONFIG.BRUSH_TOOLS.length;
-  const maxBag = CONFIG.BAG_LEVELS.length;
-  GameState.upgrades.brushLevel = Math.min(Math.max(GameState.upgrades.brushLevel, 1), maxBrush);
-  GameState.upgrades.bagLevel = Math.min(Math.max(GameState.upgrades.bagLevel, 1), maxBag);
-  GameState.bagCapacity = CONFIG.BAG_LEVELS[GameState.upgrades.bagLevel - 1].capacity;
+// Pulu 0.1 dəqiqliyə yuvarlaqlaşdırır
+function roundMoney(value) {
+  return Math.round(value * 10) / 10;
 }
 
-export function getBrushTool() {
-  return CONFIG.BRUSH_TOOLS[GameState.upgrades.brushLevel - 1];
+// Ədəd deyilsə ehtiyat dəyəri qaytarır (xarab yaddaşdan qorunmaq üçün)
+function toNumber(value, fallback) {
+  return Number.isFinite(value) ? value : fallback;
 }
 
-export function getBrushSize() {
-  return getBrushTool().size;
+// Saxlamaq üçün oyun vəziyyətinin surəti
+export function exportState() {
+  return {
+    playerId: GameState.playerId,
+    money: GameState.money,
+    bag: GameState.bag,
+    totalDustCollected: GameState.totalDustCollected,
+    upgrades: {
+      brushLevel: GameState.upgrades.brushLevel,
+      bagLevel: GameState.upgrades.bagLevel,
+    },
+  };
 }
 
-export function getNextBrushTool() {
-  return CONFIG.BRUSH_TOOLS[GameState.upgrades.brushLevel] || null;
+// Yaddaşdan oxunan məlumatı yoxlayıb oyun vəziyyətinə yazır
+export function importState(data) {
+  GameState.money = Math.max(0, toNumber(data.money, 0));
+  GameState.bag = Math.max(0, toNumber(data.bag, 0));
+  GameState.totalDustCollected = Math.max(0, toNumber(data.totalDustCollected, 0));
+  if (data.upgrades) {
+    GameState.upgrades.brushLevel = toNumber(data.upgrades.brushLevel, 1);
+    GameState.upgrades.bagLevel = toNumber(data.upgrades.bagLevel, 1);
+  }
 }
 
-export function getNextBagLevel() {
-  return CONFIG.BAG_LEVELS[GameState.upgrades.bagLevel] || null;
+// Çantanın tutumunu dəyişir (çanta tutumdan çox doludursa, artığı kəsir)
+export function setBagCapacity(capacity) {
+  GameState.bagCapacity = capacity;
+  if (GameState.bag > capacity) {
+    GameState.bag = capacity;
+  }
 }
 
-export function tozToplA(miqdar) {
-  if (miqdar <= 0) { return 0; }
-  const bosYer = GameState.bagCapacity - GameState.bag;
-  const alinan = Math.min(bosYer, miqdar);
-  GameState.bag += alinan;
-  GameState.totalDustCollected += alinan;
-  return alinan;
+// Çanta doludurmu
+export function isBagFull() {
+  return GameState.bagCapacity - GameState.bag < 0.0001;
 }
 
-export function sat(qiymetPerVahid) {
-  const satilan = GameState.bag;
-  const qazanc = Math.round(satilan * qiymetPerVahid * 10) / 10;
-  GameState.money = Math.round((GameState.money + qazanc) * 10) / 10;
+// Tozu çantaya əlavə edir, həqiqətən əlavə olunan miqdarı qaytarır
+export function collectDust(amount) {
+  if (amount <= 0) { return 0; }
+  const freeSpace = GameState.bagCapacity - GameState.bag;
+  const added = Math.min(freeSpace, amount);
+  GameState.bag += added;
+  GameState.totalDustCollected += added;
+  return added;
+}
+
+// Çantadakı bütün tozu satır
+export function sellDust(pricePerKg) {
+  const sold = GameState.bag;
+  const earned = roundMoney(sold * pricePerKg);
   GameState.bag = 0;
-  return { qazanc, satilan };
+  earnMoney(earned);
+  return { earned, sold };
 }
 
-export function pulXercle(miqdar) {
-  if (miqdar > GameState.money) { return false; }
-  GameState.money -= miqdar;
+// Pul qazandırır
+export function earnMoney(amount) {
+  if (amount <= 0) { return; }
+  GameState.money = roundMoney(GameState.money + amount);
+}
+
+// Pul xərcləyir; kifayət etmirsə false qaytarır
+export function spendMoney(amount) {
+  if (amount > GameState.money) { return false; }
+  GameState.money = roundMoney(GameState.money - amount);
   return true;
-}
-
-export function buyBrushUpgrade() {
-  const next = getNextBrushTool();
-  if (next === null) { return { ok: false, message: 'Ən güclü alətdir' }; }
-  if (!pulXercle(next.price)) { return { ok: false, message: 'Pul çatmır' }; }
-  GameState.upgrades.brushLevel += 1;
-  applyUpgrades();
-  return { ok: true, message: next.name + ' alındı!' };
-}
-
-export function buyBagUpgrade() {
-  const next = getNextBagLevel();
-  if (next === null) { return { ok: false, message: 'Ən böyük çantadır' }; }
-  if (!pulXercle(next.price)) { return { ok: false, message: 'Pul çatmır' }; }
-  GameState.upgrades.bagLevel += 1;
-  applyUpgrades();
-  return { ok: true, message: 'Çanta ' + next.capacity + ' kq oldu!' };
 }
