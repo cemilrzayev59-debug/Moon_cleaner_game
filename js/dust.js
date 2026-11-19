@@ -55,6 +55,38 @@ function convexHull(points) {
   return lower.concat(upper);
 }
 
+// Bazanın altında və ətrafında toz olmasın: həmin yeri əvvəlcədən təmiz sayır (pul vermir)
+function clearBaseFootprint(dustSystem) {
+  const halfWidth = CONFIG.BASE_WIDTH / 2 + CONFIG.BASE_CLEAR_MARGIN;
+  const halfDepth = CONFIG.BASE_DEPTH / 2 + CONFIG.BASE_CLEAR_MARGIN;
+  const minI = Math.max(0, Math.floor((CONFIG.BASE_X - halfWidth) / CELL));
+  const maxI = Math.min(GRID - 1, Math.floor((CONFIG.BASE_X + halfWidth) / CELL));
+  const minJ = Math.max(0, Math.floor((CONFIG.BASE_Z - halfDepth) / CELL));
+  const maxJ = Math.min(GRID - 1, Math.floor((CONFIG.BASE_Z + halfDepth) / CELL));
+
+  for (let j = minJ; j <= maxJ; j++) {
+    for (let i = minI; i <= maxI; i++) {
+      const index = j * GRID + i;
+      if (dustSystem.cleaned[index] === 0) {
+        dustSystem.cleaned[index] = 1;
+        const chunkIndex = Math.floor(j / CHUNK_CELLS) * CHUNKS + Math.floor(i / CHUNK_CELLS);
+        dustSystem.chunkCleaned[chunkIndex] += 1;
+      }
+    }
+  }
+  dustSystem.ctx.clearRect(minI, minJ, maxI - minI + 1, maxJ - minJ + 1);
+
+  // Tam bazanın altında qalan parçalar mükafatsız "bitmiş" sayılır
+  const needed = CHUNK_CELLS * CHUNK_CELLS * CONFIG.CHUNK_DONE_RATIO;
+  for (let chunkIndex = 0; chunkIndex < dustSystem.chunkCleaned.length; chunkIndex++) {
+    if (dustSystem.chunkCleaned[chunkIndex] >= needed) {
+      dustSystem.chunkDone[chunkIndex] = 1;
+    }
+  }
+  dustSystem.dirty = true;
+  dustSystem.version += 1;
+}
+
 export function createDustSystem(scene) {
   // Toz xəritəsi: ağ = toz var, təmizlənən yer şəffaf olur
   const canvas = document.createElement('canvas');
@@ -112,7 +144,7 @@ export function createDustSystem(scene) {
   marker.visible = false;
   scene.add(marker);
 
-  return {
+  const dustSystem = {
     cleaned: new Uint8Array(GRID * GRID),
     cleanedCount: 0,
     version: 0,
@@ -129,6 +161,9 @@ export function createDustSystem(scene) {
     dirty: false,
     lastUpload: 0,
   };
+
+  clearBaseFootprint(dustSystem);
+  return dustSystem;
 }
 
 export function updateDustWindow(dustSystem, playerPos, nowMs) {
