@@ -120,7 +120,7 @@ function startGame(device) {
       saveGame();
     }
 
-    // Parça faizi və bazaya məsafə
+    // Parça faizi və bazaya məsafəgrgrg
     const target = hit !== null ? hit : playerPos;
     const baseMeters = Math.round(Math.hypot(playerPos.x - CONFIG.BASE_X, playerPos.z - CONFIG.BASE_Z));
     updateInfoLabels(getChunkProgress(dustSystem, target.x, target.z), baseMeters);
@@ -131,5 +131,5 @@ function startGame(device) {
 
   animate();
 }
-window.__gameLoaded = true;
+
 chooseDevice(startGame);
