@@ -15,7 +15,7 @@ html, body {
 }
 #version-tag {
   position: fixed; top: 8px; right: 12px; font-size: 12px; color: #aaa;
-  font-family: monospace; z-index: 10; pointer-events: none;
+  font-family: monospace; z-index: 200; pointer-events: none;
 }
 #minimap-box {
   position: fixed; top: 32px; right: 12px; z-index: 10; pointer-events: none;
@@ -67,6 +67,36 @@ html, body {
 #shop-info { font-size: 14px; margin-bottom: 10px; line-height: 1.35; }
 #shop-buy {
   width: 100%; padding: 12px; border: none; border-radius: 8px;
-  background: #22c55e; color: #fff; font-size: 16px; font-weight: 800;
+  background: #22c55e; color: #fff; font-size: 16px; font-weight: 800; cursor: pointer;
 }
-#shop-buy:disabled { background: #555; color: #aaa; }
+#shop-buy:disabled { background: #555; color: #aaa; cursor: default; }
+
+/* Başlanğıc ekranı (cihaz seçimi) */
+#start-screen {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background: #000008; padding: 16px;
+}
+#start-screen.hidden { display: none; }
+#start-box { width: 100%; max-width: 340px; text-align: center; }
+#start-box h1 { font-size: 24px; margin-bottom: 8px; }
+#start-box p { color: #bbb; margin-bottom: 20px; }
+.choose-btn {
+  display: block; width: 100%; padding: 16px; margin-bottom: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.35); border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08); color: #fff;
+  font-size: 18px; font-weight: 800; cursor: pointer;
+}
+.choose-btn.suggested { border-color: #22c55e; background: rgba(34, 197, 94, 0.2); }
+.choose-btn.suggested::after { content: '  · tövsiyə'; font-size: 12px; color: #22c55e; }
+
+/* Kompüter rejimi: toxunuş düymələri gizlənir, klaviatura köməyi görünür */
+#pc-hint {
+  display: none; position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+  z-index: 10; max-width: 92%; padding: 6px 12px; border-radius: 16px; text-align: center;
+  background: rgba(0, 0, 0, 0.55); font-size: 13px; font-weight: 700; pointer-events: none;
+}
+body.device-pc #pc-hint { display: block; }
+body.device-pc #joystick-base,
+body.device-pc #camera-area,
+body.device-pc #action-btn { display: none; }
