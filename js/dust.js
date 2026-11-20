@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from './three.js';
 import { CONFIG } from './config.js';
 import { mod1 } from './sweep.js';
 import { clearBaseFootprint } from './chunks.js';
