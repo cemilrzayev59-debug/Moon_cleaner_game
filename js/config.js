@@ -72,7 +72,7 @@ export const CONFIG = {
     { capacity: 16, price: 900 },
   ],
 
-  // Robot süpürgələr (0-cı səviyyə = robot hələ alınmayıb)
+  // Robot süpürgələr (0-eduegf7egfcı səviyyə = robot hələ alınmayıb)
   // size: təmizlədiyi zolağın eni (metr), speed: sürəti (metr/saniyə)
   ROBOT_LEVELS: [
     { name: 'Robot yoxdur', size: 0, speed: 0, price: 0 },
