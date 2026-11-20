@@ -9,7 +9,7 @@ const SURFACE_SIZE = 270;
 const CHUNK_SIZE = 6;
 
 const CONFIG = {
-  VERSION: 'v0.9.7',
+  VERSION: 'v0.9.8',
 
   CELL,
   SURFACE_SIZE,
