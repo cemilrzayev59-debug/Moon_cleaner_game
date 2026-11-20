@@ -1,7 +1,7 @@
 import { GameState } from './state.js';
 
 let toastTimer = null;
-const elements = {};   // tapılmış HTML elementlərigyfxfy
+const elements = {};   // tapılmış HTML elementləri
 const lastTexts = {};  // son yazılmış mətnlər (boş yerə yeniləməmək üçün)
 
 function getElement(id) {
@@ -33,7 +33,7 @@ export function showToast(text) {
   }, 1800);
 }
 
-// Pul və çanta yazısı (çantanın real tutumu göstərilir)
+// Pul və çanta yazısı (çantanın real tutumu göstərilir)fryfg47h47
 export function updateHUD() {
   setTextIfChanged('hud-money', '💰 ' + Math.floor(GameState.money));
   setTextIfChanged(
