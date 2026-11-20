@@ -7,39 +7,45 @@ import { eraseSweep } from './sweep.js';
 const GRID = CONFIG.GRID;
 const CELL = CONFIG.CELL;
 const HEIGHT = CONFIG.DUST_HEIGHT;
+const KG_PER_CELL = CONFIG.KG_PER_SQUARE_UNIT * CELL * CELL;
 
-// Bir xananı təmizlənmiş sayır, tozu çantaya əlavə edir, parçanı yoxlayır.
-// Çantanın dolu olub-olmadığını burada yox, süpürmənin hər addımından əvvəl yoxlayırıq:
-// beləliklə silinən görüntü ilə hesablanan toz həmişə eyni olur.
+// Bir xananı təmizlənmiş sayır və parçanı yoxlayır.swswswsedf
+// Xana yeni təmizlənibsə true, əvvəldən təmiz idisə false qaytarır.
+// Tozu çantaya yazmaq bu funksiyanın işi deyil (çünki robot çantadan istifadə etmir).
 function cleanCell(dustSystem, worldI, worldJ) {
   const i = wrapIndex(worldI);
   const j = wrapIndex(worldJ);
   const index = j * GRID + i;
-  if (dustSystem.cleaned[index] === 1) { return; }
+  if (dustSystem.cleaned[index] === 1) { return false; }
 
   dustSystem.cleaned[index] = 1;
   dustSystem.cleanedCount += 1;
   dustSystem.version += 1;
-  collectDust(CONFIG.KG_PER_SQUARE_UNIT * CELL * CELL);
   addCleanedCell(dustSystem, i, j);
+  return true;
 }
 
-// (x, z) nöqtəsi ətrafında size ölçülü kvadratı təmizləyir
-function cleanSquare(dustSystem, x, z, size) {
+// (x, z) nöqtəsi ətrafında size ölçülü kvadratı təmizləyir.
+// Neçə yeni xana təmizləndiyini qaytarır (oyunçu və robot bunu istifadə edir).
+export function cleanSquare(dustSystem, x, z, size) {
   const half = size / 2;
   const minI = Math.floor((x - half) / CELL);
   const maxI = Math.floor((x + half) / CELL);
   const minJ = Math.floor((z - half) / CELL);
   const maxJ = Math.floor((z + half) / CELL);
+  let newCells = 0;
   for (let j = minJ; j <= maxJ; j++) {
     for (let i = minI; i <= maxI; i++) {
       const centerX = (i + 0.5) * CELL;
       const centerZ = (j + 0.5) * CELL;
       if (Math.abs(centerX - x) <= half && Math.abs(centerZ - z) <= half) {
-        cleanCell(dustSystem, i, j);
+        if (cleanCell(dustSystem, i, j)) {
+          newCells += 1;
+        }
       }
     }
   }
+  return newCells;
 }
 
 // Hər kadrda: marker göstərilir, düymə basılıbsa fırça əvvəlki yerdən indiki yerə süpürür
@@ -85,8 +91,11 @@ export function updateDustSystem(dustSystem, hitPoint, isBrushing) {
     const t = step / steps;
     endX = startX + (hitPoint.x - startX) * t;
     endZ = startZ + (hitPoint.z - startZ) * t;
-    cleanSquare(dustSystem, endX, endZ, size);
-    cleanedAny = true;
+    const newCells = cleanSquare(dustSystem, endX, endZ, size);
+    if (newCells > 0) {
+      collectDust(newCells * KG_PER_CELL);
+      cleanedAny = true;
+    }
   }
 
   // Görüntüdən yalnız həqiqətən təmizlənən zolağı silirik
