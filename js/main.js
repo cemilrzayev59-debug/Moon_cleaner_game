@@ -873,10 +873,10 @@ function createWorld() {
   const sky = new THREE.Group();
   scene.add(sky);
 
-  const starCount = 120;
+  const starCount = 300;
   const positions = new Float32Array(starCount * 3);
   for (let i = 0; i < starCount; i++) {
-    const r = 90;
+    const r = 180;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
     positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
@@ -2056,7 +2056,7 @@ function startGame(device) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 100);
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 200);
   const world = createWorld();
   world.scene.add(camera);
 
