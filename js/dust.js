@@ -1,4 +1,4 @@
-import * as THREE from './three.js';
+import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { mod1 } from './sweep.js';
 import { clearBaseFootprint } from './chunks.js';
@@ -159,7 +159,7 @@ export function createDustSystem(scene) {
         });
     }
 
-    // Təmizləmə göstəricisi
+    // Təmizləmə göstəricisifh5ngrtf
     const marker = new THREE.Mesh(
         new THREE.PlaneGeometry(1, 1),
 
