@@ -1,4 +1,4 @@
-import * as THREE from './three.js';
+import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { applyUpgrades } from './upgrades.js';
 import { loadGame, saveGame, startAutoSave } from './save.js';
@@ -11,12 +11,14 @@ import { updateDustSystem } from './cleaning.js';
 import { getChunkProgress } from './chunks.js';
 import { createMinimap, updateMinimap } from './minimap.js';
 import { createBase, updateBase, isInsideBase } from './base.js';
+import { createRobot, updateRobot } from './robot.js';
+import { detectDevice } from './device.js';
 
-// Versiya nömrəsi başlanğıc ekranında da görünsün
+// Versiya nömrəsi ekranda görünsün
 document.getElementById('version-tag').textContent = CONFIG.VERSION;
 
-// Oyunu seçilmiş cihaza ('phone' və ya 'pc') görə işə salır (boot.js çağırır)
-export function startGame(device) {
+// Oyunu seçilmiş cihaza ('phone' və ya 'pc') görə işə salır
+function startGame(device) {
   loadGame();
   applyUpgrades();
 
@@ -34,6 +36,7 @@ export function startGame(device) {
   const dustSystem = createDustSystem(world.scene);
   const minimap = createMinimap();
   const base = createBase(world.scene);
+  const robot = createRobot(world.scene);
 
   setupControls(device);
   updateHUD();
@@ -67,6 +70,7 @@ export function startGame(device) {
     return hitPoint;
   }
 
+  // Hər kadrda işləyən əsas dövr
   function animate() {
     requestAnimationFrame(animate);
     const dt = Math.min(clock.getDelta(), 0.1);
@@ -109,10 +113,11 @@ export function startGame(device) {
 
     const hit = findGroundHit();
     updateDustSystem(dustSystem, hit, inputState.actionPressed);
+    updateRobot(robot, dustSystem, dt);
     updateBase(base, playerPos);
     updateMinimap(minimap, dustSystem, playerPos, heading, nowMs);
 
-    // Parça tamamlananda mesajhhththt
+    // Parça tamamlananda mesaj (oyunçu da, robot da tamamlaya bilər)
     if (dustSystem.rewardPending > 0) {
       showToast('Parça təmizləndi! +' + dustSystem.rewardPending + ' 💰');
       dustSystem.rewardPending = 0;
@@ -130,3 +135,6 @@ export function startGame(device) {
 
   animate();
 }
+
+// Cihaz özü təyin olunur, seçim ekranı yoxdur
+startGame(detectDevice());
