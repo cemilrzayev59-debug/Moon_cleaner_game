@@ -1,4 +1,4 @@
-import * as THREE from './three.js';
+import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { GameState, sellDust } from './state.js';
 import { createShopPanel, updateShopPanel } from './shop.js';
@@ -25,12 +25,13 @@ function makeLabel(text) {
   return sprite;
 }
 
+// İki sahə: satış və yeniləmə (alət + çanta + roswswswswbot bir yerdə)
 const PADS = [
-  { id: 'sell', label: 'SATIŞ', color: 0x35c46a, offsetX: -6 },
-  { id: 'tool', label: 'ALƏT', color: 0x3b82f6, offsetX: 0 },
-  { id: 'bag', label: 'ÇANTA', color: 0xf59e0b, offsetX: 6 },
+  { id: 'sell', label: 'SATIŞ', color: 0x35c46a, offsetX: -4 },
+  { id: 'upgrade', label: 'YENİLƏMƏ', color: 0x3b82f6, offsetX: 4 },
 ];
 
+// Bazanı və sahələri sahnəyə qoyur
 export function createBase(scene) {
   const slab = new THREE.Mesh(
     new THREE.BoxGeometry(CONFIG.BASE_WIDTH, 0.3, CONFIG.BASE_DEPTH),
