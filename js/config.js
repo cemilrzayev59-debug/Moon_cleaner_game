@@ -3,7 +3,7 @@ const SURFACE_SIZE = 270;
 const CHUNK_SIZE = 6;
 
 export const CONFIG = {
-  VERSION: 'v0.9.3',
+  VERSION: 'v0.9.4',
 
   CELL,
   SURFACE_SIZE,
@@ -14,7 +14,7 @@ export const CONFIG = {
   CHUNK_CELLS: Math.round(CHUNK_SIZE / CELL),
   CHUNKS_PER_SIDE: Math.round(SURFACE_SIZE / CHUNK_SIZE),
 
-  CHUNK_REWARD: 40,
+  CHUNK_REWARD: 4,
   CHUNK_DONE_RATIO: 0.97,
 
   FAR_SIZE: 2000,
@@ -71,4 +71,16 @@ export const CONFIG = {
     { capacity: 8, price: 300 },
     { capacity: 16, price: 900 },
   ],
+
+  // Robot süpürgələr (0-cı səviyyə = robot hələ alınmayıb)
+  // size: təmizlədiyi zolağın eni (metr), speed: sürəti (metr/saniyə)
+  ROBOT_LEVELS: [
+    { name: 'Robot yoxdur', size: 0, speed: 0, price: 0 },
+    { name: 'Robot süpürgə', size: 1.0, speed: 2.5, price: 150 },
+    { name: 'Sürətli robot', size: 1.4, speed: 3.5, price: 700 },
+    { name: 'Super robot', size: 2.0, speed: 5, price: 2200 },
+  ],
+
+  // Robot tozlu yeri bu məsafələrdə (metr) axtarır: əvvəl yaxında, tapmasa daha uzaqda
+  ROBOT_SEARCH_RADIUS: [20, 50, 120],
 };
