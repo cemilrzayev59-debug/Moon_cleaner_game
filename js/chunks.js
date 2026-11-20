@@ -84,7 +84,7 @@ export function addCleanedCell(dustSystem, i, j) {
   }
 }
 
-// Hazırkı parçanın tamamlanma faizi (0-100)
+// Hazırkı parçanın tamamlanma faizi (0-100)edededede
 export function getChunkProgress(dustSystem, x, z) {
   const i = wrapIndex(Math.floor(x / CELL));
   const j = wrapIndex(Math.floor(z / CELL));
