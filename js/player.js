@@ -1,4 +1,4 @@
-import * as THREE from './three.js';
+import * as THREE from 'three';
 import { GameState } from './state.js';
 
 // Qutu şəklində bir hissə düzəldir (en, hündürlük, dərinlik, rəng, yer)
