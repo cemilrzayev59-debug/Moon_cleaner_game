@@ -35,7 +35,7 @@ export function loadGame() {
   }
 }
 
-// Avtomatik saxlama: hər 10 saniyədən bir, həmçinin səhifə gizlənəndə və ya bağlananda rrhgrghrghruhg
+// Avtomatik saxlama: hər 10 saniyədən bir, həmçinin səhifə gizlənəndə və ya bağlananda
 export function startAutoSave() {
   setInterval(saveGame, 10000);
   document.addEventListener('visibilitychange', () => {
