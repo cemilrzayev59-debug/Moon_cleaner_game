@@ -3,15 +3,18 @@ import { CONFIG } from './config.js';
 const GRID = CONFIG.GRID;
 const SIZE = CONFIG.SURFACE_SIZE;
 
+// Ədədi 0..1 aralığına gətirir (dünya təkrarlandığı üçün lazımdır)
 export function mod1(value) {
     return ((value % 1) + 1) % 1;
 }
 
+// Üç nöqtənin dönmə istiqamətini hesablayır (qabıq çəkmək üçün)
 function crossProduct(a, b, c) {
     return (b[0] - a[0]) * (c[1] - a[1]) -
            (b[1] - a[1]) * (c[0] - a[0]);
 }
 
+// Nöqtələri əhatə edən ən kiçik qabıq (çoxbucaqlı) tapır
 function convexHull(points) {
     points.sort((p, q) =>
         (p[0] - q[0]) || (p[1] - q[1])
@@ -59,12 +62,11 @@ function convexHull(points) {
     return lower.concat(upper);
 }
 
+// (ax, az) nöqtəsindən (bx, bz) nöqtəsinə qədər olan zolağı görüntüdən silir.
+// Həm oyunçunun fırçası, həm də robot bunu istifadə edir.
+// Diqqət: burada artıq "eyni nöqtədirsə çıx" yoxlaması yoxdur ededdr(o, ilk basışda tozu silməyə qoymurdu)
+// və dustSystem.lastHit dəyişdirilmir (onu yalnız oyunçunun fırçası idarə edir).
 export function eraseSweep(dustSystem, ax, az, bx, bz, size) {
-
-    // Eyni nöqtədə lazımsız hesablamanı azalt
-    if (ax === bx && az === bz && dustSystem.lastHit) {
-        return;
-    }
 
     const half = size / 2;
 
@@ -145,5 +147,4 @@ export function eraseSweep(dustSystem, ax, az, bx, bz, size) {
     ctx.globalCompositeOperation = 'source-over';
 
     dustSystem.dirty = true;
-    dustSystem.lastHit = { x: bx, z: bz };
 }
