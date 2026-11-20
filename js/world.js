@@ -1,4 +1,4 @@
-import * as THREE from './three.js';
+import * as THREE from 'three';
 
 export function createWorld() {
   const scene = new THREE.Scene();
