@@ -9,6 +9,7 @@ export const GameState = {
   upgrades: {
     brushLevel: 1,
     bagLevel: 1,
+    robotLevel: 0,   // 0 = robot hələ alınmayıb
   },
 };
 
@@ -32,6 +33,7 @@ export function exportState() {
     upgrades: {
       brushLevel: GameState.upgrades.brushLevel,
       bagLevel: GameState.upgrades.bagLevel,
+      robotLevel: GameState.upgrades.robotLevel,
     },
   };
 }
@@ -44,6 +46,7 @@ export function importState(data) {
   if (data.upgrades) {
     GameState.upgrades.brushLevel = toNumber(data.upgrades.brushLevel, 1);
     GameState.upgrades.bagLevel = toNumber(data.upgrades.bagLevel, 1);
+    GameState.upgrades.robotLevel = toNumber(data.upgrades.robotLevel, 0);
   }
 }
 
