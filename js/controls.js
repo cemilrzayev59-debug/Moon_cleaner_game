@@ -8,7 +8,7 @@ export const inputState = {
   actionPressed: false,
 };
 
-// Seçilmiş cihaza görə idarəetməni qoşur: 'pc' = klaviatura və siçan, 'phone' = toxunuş
+// Seçilmiş cihaza görə idarəetməni qoşur: 'pc' = klaviattuhgtuhgtuura və siçan, 'phone' = toxunuş
 export function setupControls(device) {
   if (device === 'pc') {
     setupKeyboardControls(inputState);
