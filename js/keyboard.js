@@ -1,16 +1,26 @@
 import { CONFIG } from './config.js';
 
-// Kompüter idarəsi: WASD/oxlar, siçan baxışı, sol klik və ya Boşluq, E (mağazada "Al")
+// Kompüterdə 1, 2, 3 düymələri yeniləmə panelindəki uyğun "Al" düyməsini basır
+const BUY_BUTTONS = {
+  Digit1: 'shop-buy-tool',
+  Numpad1: 'shop-buy-tool',
+  Digit2: 'shop-buy-bag',
+  Numpad2: 'shop-buy-bag',
+  Digit3: 'shop-buy-robot',
+  Numpad3: 'shop-buy-robot',
+};
+
+// Kompüter idarəsi: WASD/oxlar, siçan baxışı, sol klik və ya Boşluq, 1/2/3 (yeniləmə paneli)
 export function setupKeyboardControls(inputState) {
   const container = document.getElementById('game-container');
   const hint = document.getElementById('pc-hint');
   const shopPanel = document.getElementById('shop-panel');
-  const shopBuy = document.getElementById('shop-buy');
 
   const keys = {};      // hazırda basılı düymələr
   let spaceDown = false;
   let mouseDown = false;
 
+  // İki düymədən biri basılıdırmı
   function isDown(firstCode, secondCode) {
     return keys[firstCode] === true || keys[secondCode] === true;
   }
@@ -21,10 +31,12 @@ export function setupKeyboardControls(inputState) {
     inputState.joystick.x = (isDown('KeyD', 'ArrowRight') ? 1 : 0) - (isDown('KeyA', 'ArrowLeft') ? 1 : 0);
   }
 
+  // Təmizləmə düyməsinin vəziyyətini yeniləyir
   function updateAction() {
     inputState.actionPressed = spaceDown || mouseDown;
   }
 
+  // Siçan oyuna kilidlənibmi
   function isLocked() {
     return document.pointerLockElement === container;
   }
@@ -32,7 +44,7 @@ export function setupKeyboardControls(inputState) {
   // Ekranın altındakı köməkçi yazı
   function updateHint() {
     if (isLocked()) {
-      hint.textContent = 'WASD: yeriş · Siçan: baxış · Sol klik / Boşluq: təmizlə · E: al · Esc: siçanı burax';
+      hint.textContent = 'WASD: yeriş · Siçan: baxış · Sol klik / Boşluq: təmizlə · 1/2/3: yenilə · Esc: siçanı burax';
     } else {
       hint.textContent = 'Başlamaq üçün oyuna klikləyin';
     }
@@ -66,10 +78,15 @@ export function setupKeyboardControls(inputState) {
       updateAction();
       return;
     }
-    if (e.code === 'KeyE') {
-      if (!e.repeat && shopPanel.classList.contains('show')) { shopBuy.click(); }
+
+    const buyId = BUY_BUTTONS[e.code];
+    if (buyId !== undefined) {
+      if (!e.repeat && shopPanel.classList.contains('show')) {
+        document.getElementById(buyId).click();
+      }
       return;
     }
+
     if (e.code.startsWith('Arrow')) { e.preventDefault(); }
     keys[e.code] = true;
     updateMove();
