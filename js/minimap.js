@@ -70,7 +70,7 @@ export function updateMinimap(map, dust, playerPos, heading, nowMs) {
   const baseMapY = mod1(CONFIG.BASE_Z / CONFIG.SURFACE_SIZE) * MAP_SIZE;
   map.ctx.fillStyle = '#3b82f6';
   map.ctx.fillRect(baseMapX - 4, baseMapY - 4, 8, 8);
-  // Oyunçunun yeri və baxdığı istiqamətrfrgrgrgrg
+  // Oyunçunun yeri və baxdığı istiqamət
   const dotX = mod1(playerPos.x / CONFIG.SURFACE_SIZE) * MAP_SIZE;
   const dotY = mod1(playerPos.z / CONFIG.SURFACE_SIZE) * MAP_SIZE;
   map.ctx.strokeStyle = '#ff4040';
