@@ -27,7 +27,7 @@ const CONFIG = {
   LAYER_WINDOW: 60,
 
   // Silinmiş yerin ekrana çıxma sürəti (millisaniyə): kiçik olsa fırçanın izi daha tez görünür, amma yük artır
-  VISUAL_UPLOAD_MS: 200,
+  VISUAL_UPLOAD_MS:100,
 
   DUST_HEIGHT: 0.20,
   DUST_COLOR: 0xa8a8a8,
