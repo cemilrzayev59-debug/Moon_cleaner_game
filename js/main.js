@@ -4,12 +4,12 @@ import * as THREE from 'three';
 // ===== AYARLAR (config.js) =====
 // ===================================================================
 
-const CELL = 0.125;        // maskanın bir pikselinin ölçüsü (metr). Kiçildikcə kənar daha dəqiq olur, amma yaddaş çoxalır
+const CELL = 0.125;         // xana ölçüsü (kiçildikcə təmizlik daha hamar görünür)
 const SURFACE_SIZE = 402;   // 6-ya bölünməlidir (parça ölçüsü) və CELL-ə uyğun olmalıdır
 const CHUNK_SIZE = 6;
 
 const CONFIG = {
-  VERSION: 'v0.9.11',
+  VERSION: 'v0.11.1',
 
   CELL,
   SURFACE_SIZE,
@@ -21,15 +21,15 @@ const CONFIG = {
   CHUNKS_PER_SIDE: Math.round(SURFACE_SIZE / CHUNK_SIZE),
 
   CHUNK_REWARD: 40,
-  CHUNK_DONE_RATIO: 1.0,   // 1.0 = parça tam təmizlənməlidir (çətin gələrsə 0.99 yazın)
+  CHUNK_DONE_RATIO: 0.95,   // 1.0 = parça tam təmizlənməlidir (çətin gələrsə 0.99 yazın)
 
   FAR_SIZE: 2000,
   LAYER_WINDOW: 60,
 
-  // Silinmiş yerin ekrana çıxma sürəti (millisaniyə): kiçik olsa fırçanın izi daha tez görünür
-  VISUAL_UPLOAD_MS: 100,
+  // Silinmiş yerin ekrana çıxma sürəti (millisaniyə): kiçik olsa fırçanın izi daha tez görünür, amma yük artır
+  VISUAL_UPLOAD_MS: 200,
 
-  DUST_HEIGHT: 0.12,
+  DUST_HEIGHT: 0.20,
   DUST_COLOR: 0xa8a8a8,
 
   WALL_COLORS: [
@@ -96,6 +96,35 @@ const CONFIG = {
 
   // Robot sayı: siyahının uzunluğu = ən çox robot sayı, hər ədəd növbəti robotun qiymətidir
   ROBOT_COUNT_PRICES: [400, 1000, 2500, 6000, 12000],
+
+  // Sürülən süpürgə maşınları (hər səviyyənin öz növü var)
+  // width: qabağında təmizlədiyi zolağın eni (metr), speed: sürəti (metr/saniyə)
+  // brushZ: fırça zolağının maşının qabağında nə qədər irəlidə olması
+  // camBack / camHeight: maşın sürəndə kameranın arxadan məsafəsi və hündürlüyü
+  VEHICLE_LEVELS: [
+    { name: 'Skuter', width: 2.2, speed: 7, price: 500, brushZ: 1.1, camBack: 4, camHeight: 2.6 },
+    { name: 'Süpürgə yük maşını', width: 3.2, speed: 9, price: 1800, brushZ: 1.8, camBack: 5, camHeight: 3.0 },
+    { name: 'Süpürgə traktoru', width: 4.6, speed: 11, price: 5000, brushZ: 2.2, camBack: 6, camHeight: 3.5 },
+    { name: 'Ay vezdehodu', width: 6.2, speed: 14, price: 14000, brushZ: 2.6, camBack: 7, camHeight: 4.0 },
+    { name: 'Super kombayn', width: 8.0, speed: 18, price: 35000, brushZ: 3.0, camBack: 8, camHeight: 4.5 },
+  ],
+
+  VEHICLE_TURN_SPEED: 1.8,      // maşının dönmə sürəti (radian/saniyə)
+  VEHICLE_REVERSE_FACTOR: 0.4,  // geri gedəndə sürət nisbəti
+  VEHICLE_SWEEP_SQUARE: 1.0,    // maşının zolağını təşkil edən kiçik kvadratın ölçüsü
+  VEHICLE_BOARD_MARGIN: 3,      // bazadan nə qədər uzaqda maşına minmək olar
+  VEHICLE_LEAVE_MARGIN: 1,      // bazaya bu qədər yaxınlaşanda maşından özü düşür
+
+  // İşçilər (əlində süpürgə olan adamlar; 1-ci səviyyə hamıda var, pulsuzdur)
+  // size: süpürgənin təmizlədiyi zolağın eni (metr), speed: sürəti (metr/saniyə)
+  WORKER_LEVELS: [
+    { name: 'İşçi', size: 0.9, speed: 2.2, price: 0, shirtColor: 0x3b82f6, pantsColor: 0x1f2937, hatColor: 0xfacc15 },
+    { name: 'Təcrübəli işçi', size: 1.3, speed: 3.0, price: 700, shirtColor: 0xf97316, pantsColor: 0x374151, hatColor: 0xffffff },
+    { name: 'Usta işçi', size: 1.8, speed: 4.0, price: 2500, shirtColor: 0x22c55e, pantsColor: 0x1e293b, hatColor: 0xef4444 },
+  ],
+
+  // İşçi sayı: siyahının uzunluğu = ən çox işçi sayı, hər ədəd növbəti işçinin qiymətidir
+  WORKER_COUNT_PRICES: [300, 800, 2000, 5000, 10000],
 };
 
 // Bütün hissələrin ortaq istifadə etdiyi ölçülər
@@ -108,7 +137,6 @@ const CHUNK_AREA = CHUNK_CELLS * CHUNK_CELLS;
 const NEEDED_CELLS = CHUNK_AREA * CONFIG.CHUNK_DONE_RATIO; // parçanın "bitdi" sayılması üçün lazım olan xana sayı
 const KG_PER_CELL = CONFIG.KG_PER_SQUARE_UNIT * CELL * CELL;
 const MONEY_PER_CELL = KG_PER_CELL * CONFIG.SELL_PRICE_PER_KG;
-
 // ===================================================================
 // ===== OYUN VƏZİYYƏTİ (state.js) =====
 // ===================================================================
@@ -124,6 +152,9 @@ const GameState = {
     bagLevel: 1,
     robotLevel: 1,   // robot modeli (1 = ən sadə)
     robotCount: 0,   // neçə robot alınıb (0 = heç biri)
+    vehicleLevel: 0, // süpürgə maşını (0 = hələ alınmayıb, 1 = skuter ...)
+    workerLevel: 1,  // işçi səviyyəsi (1 = ən sadə)
+    workerCount: 0,  // neçə işçi alınıb (0 = heç biri)
   },
 };
 
@@ -149,6 +180,9 @@ function exportState() {
       bagLevel: GameState.upgrades.bagLevel,
       robotLevel: GameState.upgrades.robotLevel,
       robotCount: GameState.upgrades.robotCount,
+      vehicleLevel: GameState.upgrades.vehicleLevel,
+      workerLevel: GameState.upgrades.workerLevel,
+      workerCount: GameState.upgrades.workerCount,
     },
   };
 }
@@ -171,6 +205,13 @@ function importState(data) {
       GameState.upgrades.robotCount = toNumber(saved.robotCount, 0);
     }
     GameState.upgrades.robotLevel = Math.max(1, savedRobotLevel);
+
+    // Köhnə yaddaşda maşın yox idi: onda 0 sayırıq
+    GameState.upgrades.vehicleLevel = toNumber(saved.vehicleLevel, 0);
+
+    // Köhnə yaddaşda işçi yox idi: səviyyə 1, say 0 sayırıq
+    GameState.upgrades.workerLevel = toNumber(saved.workerLevel, 1);
+    GameState.upgrades.workerCount = toNumber(saved.workerCount, 0);
   }
 }
 
@@ -235,6 +276,9 @@ function applyUpgrades() {
   upgrades.bagLevel = clamp(Math.round(upgrades.bagLevel), 1, CONFIG.BAG_LEVELS.length);
   upgrades.robotLevel = clamp(Math.round(upgrades.robotLevel), 1, CONFIG.ROBOT_LEVELS.length);
   upgrades.robotCount = clamp(Math.round(upgrades.robotCount), 0, CONFIG.ROBOT_COUNT_PRICES.length);
+  upgrades.vehicleLevel = clamp(Math.round(upgrades.vehicleLevel), 0, CONFIG.VEHICLE_LEVELS.length);
+  upgrades.workerLevel = clamp(Math.round(upgrades.workerLevel), 1, CONFIG.WORKER_LEVELS.length);
+  upgrades.workerCount = clamp(Math.round(upgrades.workerCount), 0, CONFIG.WORKER_COUNT_PRICES.length);
   setBagCapacity(CONFIG.BAG_LEVELS[upgrades.bagLevel - 1].capacity);
 }
 
@@ -275,6 +319,34 @@ function getNextRobotCountPrice() {
   return price;
 }
 
+// Hazırkı işçi səviyyəsi (bütün işçilər eyni səviyyədə işləyir)
+function getWorkerTool() {
+  return CONFIG.WORKER_LEVELS[GameState.upgrades.workerLevel - 1];
+}
+
+// Növbəti işçi səviyyəsi (yoxdursa null)
+function getNextWorkerTool() {
+  return CONFIG.WORKER_LEVELS[GameState.upgrades.workerLevel] || null;
+}
+
+// Növbəti işçinin qiyməti (daha işçi almaq olmursa null)
+function getNextWorkerCountPrice() {
+  const price = CONFIG.WORKER_COUNT_PRICES[GameState.upgrades.workerCount];
+  if (price === undefined) { return null; }
+  return price;
+}
+
+// Hazırkı süpürgə maşını (maşın hələ alınmayıbsa null)
+function getVehicleTool() {
+  if (GameState.upgrades.vehicleLevel < 1) { return null; }
+  return CONFIG.VEHICLE_LEVELS[GameState.upgrades.vehicleLevel - 1];
+}
+
+// Növbəti süpürgə maşını (yoxdursa null)
+function getNextVehicleTool() {
+  return CONFIG.VEHICLE_LEVELS[GameState.upgrades.vehicleLevel] || null;
+}
+
 // Növbəti aləti alır
 function buyBrushUpgrade() {
   const next = getNextBrushTool();
@@ -313,6 +385,36 @@ function buyRobotCountUpgrade() {
   GameState.upgrades.robotCount += 1;
   applyUpgrades();
   return { ok: true, message: 'Yeni robot alındı! 🤖 (' + GameState.upgrades.robotCount + ')' };
+}
+
+// Növbəti işçi səviyyəsini alır (bütün işçilər yeni səviyyəyə keçir)
+function buyWorkerLevelUpgrade() {
+  const next = getNextWorkerTool();
+  if (next === null) { return { ok: false, message: 'Ən güclü işçi səviyyəsidir' }; }
+  if (!spendMoney(next.price)) { return { ok: false, message: 'Pul çatmır' }; }
+  GameState.upgrades.workerLevel += 1;
+  applyUpgrades();
+  return { ok: true, message: next.name + ' səviyyəsi alındı! 👷' };
+}
+
+// Yeni işçi işə götürür
+function buyWorkerCountUpgrade() {
+  const price = getNextWorkerCountPrice();
+  if (price === null) { return { ok: false, message: 'Ən çox işçi sayına çatdın' }; }
+  if (!spendMoney(price)) { return { ok: false, message: 'Pul çatmır' }; }
+  GameState.upgrades.workerCount += 1;
+  applyUpgrades();
+  return { ok: true, message: 'Yeni işçi işə götürüldü! 👷 (' + GameState.upgrades.workerCount + ')' };
+}
+
+// Növbəti süpürgə maşınını alır (ilk dəfə alanda maşın sənin olur, sonra növü dəyişir)
+function buyVehicleUpgrade() {
+  const next = getNextVehicleTool();
+  if (next === null) { return { ok: false, message: 'Ən güclü maşındır' }; }
+  if (!spendMoney(next.price)) { return { ok: false, message: 'Pul çatmır' }; }
+  GameState.upgrades.vehicleLevel += 1;
+  applyUpgrades();
+  return { ok: true, message: next.name + ' alındı! 🚜' };
 }
 
 // ===================================================================
@@ -622,12 +724,15 @@ function updateDustSystem(dustSystem, hitPoint, isBrushing) {
   if (isBagFull()) { return; }
 
   // Başlanğıc nöqtə: əvvəlki kadrdakı yer (yaxındırsa), yoxsa elə indiki yer
+  // Aralıq böyükdürsə (kamera sürətlə fırlananda və ya kadr atlananda) düz xətt çəkmirik:
+  // fırça orada olmayıb, ona görə yalnız indiki yerə basırıq
   let startX = hitPoint.x;
   let startZ = hitPoint.z;
   let steps = 1;
   if (from !== null) {
     const distance = Math.hypot(hitPoint.x - from.x, hitPoint.z - from.z);
-    if (distance < 3) {
+    const maxGap = Math.min(3, Math.max(1, size * 2));
+    if (distance < maxGap) {
       startX = from.x;
       startZ = from.z;
       steps = Math.max(1, Math.ceil(distance / (size / 5)));
@@ -890,10 +995,10 @@ function createWorld() {
   const sky = new THREE.Group();
   scene.add(sky);
 
-  const starCount = 2000;
+  const starCount = 200;
   const positions = new Float32Array(starCount * 3);
   for (let i = 0; i < starCount; i++) {
-    const r = 1500;
+    const r = 80;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
     positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
@@ -905,10 +1010,10 @@ function createWorld() {
   sky.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false })));
 
   const earth = new THREE.Mesh(
-    new THREE.SphereGeometry(50, 16, 12),
+    new THREE.SphereGeometry(25, 8, 6),
     new THREE.MeshStandardMaterial({ color: 0x3388ff, emissive: 0x114488, flatShading: true })
   );
-  earth.position.set(600, 450, -1000);
+  earth.position.set(45, 33, -75);
   sky.add(earth);
 
   // Ay səthi (təmiz yer): oyunçunu izləyir, ona görə dünya sonsuzdur
@@ -1082,6 +1187,9 @@ const ITEMS = [
   { id: 'bag', key: '2', title: '🎒 Çanta', buy: buyBagUpgrade },
   { id: 'robotModel', key: '3', title: '🤖 Robot modeli', buy: buyRobotModelUpgrade },
   { id: 'robotCount', key: '4', title: '🤖 Robot sayı', buy: buyRobotCountUpgrade },
+  { id: 'vehicle', key: '5', title: '🚜 Süpürgə maşını', buy: buyVehicleUpgrade },
+  { id: 'workerLevel', key: '6', title: '👷 İşçi səviyyəsi', buy: buyWorkerLevelUpgrade },
+  { id: 'workerCount', key: '7', title: '👷 İşçi sayı', buy: buyWorkerCountUpgrade },
 ];
 
 // Mağaza panelini hazırlayır: hər yenilənmə üçün bir sətir və "Al" düyməsi düzəldir
@@ -1092,6 +1200,9 @@ function createShopPanel() {
     list: document.getElementById('shop-items'),
     rows: [],
   };
+
+  shop.panel.style.maxHeight = '75vh';
+  shop.panel.style.overflowY = 'auto';
 
   for (const item of ITEMS) {
     const row = document.createElement('div');
@@ -1166,6 +1277,39 @@ function describeRow(id) {
       info = current.name + ' (' + current.size + ' m): ən güclü model';
     } else {
       info = current.name + ' → ' + next.name + ' (' + next.size + ' m)';
+      price = next.price;
+    }
+  } else if (id === 'workerLevel') {
+    const current = getWorkerTool();
+    const next = getNextWorkerTool();
+    if (next === null) {
+      info = current.name + ' (' + current.size + ' m): ən güclü səviyyə';
+    } else {
+      info = current.name + ' → ' + next.name + ' (' + next.size + ' m)';
+      price = next.price;
+    }
+  } else if (id === 'workerCount') {
+    const count = GameState.upgrades.workerCount;
+    const nextPrice = getNextWorkerCountPrice();
+    if (nextPrice === null) {
+      info = 'İşçi sayı: ' + count + ' (maksimum)';
+    } else if (count === 0) {
+      info = 'İşçi sayı: 0 → 1 (əlində süpürgə ilə özü süpürür)';
+      price = nextPrice;
+    } else {
+      info = 'İşçi sayı: ' + count + ' → ' + (count + 1);
+      price = nextPrice;
+    }
+  } else if (id === 'vehicle') {
+    const current = getVehicleTool();
+    const next = getNextVehicleTool();
+    if (next === null) {
+      info = current.name + ' (' + current.width + ' m): ən güclü maşın';
+    } else if (current === null) {
+      info = 'Maşın: yoxdur → ' + next.name + ' (' + next.width + ' m)';
+      price = next.price;
+    } else {
+      info = current.name + ' → ' + next.name + ' (' + next.width + ' m)';
       price = next.price;
     }
   } else {
@@ -1372,6 +1516,12 @@ function isInsideBase(x, z) {
     && Math.abs(wrapDelta(z - CONFIG.BASE_Z)) <= CONFIG.BASE_DEPTH / 2 + 0.5;
 }
 
+// Nöqtə bazaya (əlavə boşluqla birlikdə) yaxındırmı (maşına minmək və düşmək üçün)
+function isNearBase(x, z, margin) {
+  return Math.abs(wrapDelta(x - CONFIG.BASE_X)) <= CONFIG.BASE_WIDTH / 2 + 0.5 + margin
+    && Math.abs(wrapDelta(z - CONFIG.BASE_Z)) <= CONFIG.BASE_DEPTH / 2 + 0.5 + margin;
+}
+
 // Oyunçu divarın içinə keçibsə, onu geri itələyir (yalnız qapıdan girmək olur)
 function pushOutOfBase(playerPos) {
   let relX = wrapDelta(playerPos.x - CONFIG.BASE_X);
@@ -1477,7 +1627,7 @@ function buildRobotModel() {
 
 // Robotlar sistemini yaradır (robotlar alınanda özləri əlavə olunur)
 function createRobots(scene) {
-  return { scene: scene, robots: [] };
+  return { scene: scene, robots: [], otherUnits: [] };   // otherUnits: işçilər (parça seçimi üçün)
 }
 
 // Ədədi 0..SIZE aralığına gətirir (dünya təkrarlandığı üçün)
@@ -1510,6 +1660,13 @@ function isClaimed(system, robot, chunkIndex) {
   for (const other of system.robots) {
     if (other !== robot && other.chunkIndex === chunkIndex) {
       return true;
+    }
+  }
+  if (system.otherUnits !== undefined) {
+    for (const other of system.otherUnits) {
+      if (other !== robot && other.chunkIndex === chunkIndex) {
+        return true;
+      }
     }
   }
   return false;
@@ -1681,6 +1838,731 @@ function updateRobots(system, dustSystem, playerPos, dt) {
 }
 
 // ===================================================================
+// ===== SÜPÜRGƏ MAŞINLARI (vehicle.js) =====
+// ===================================================================
+// Maşının önü +z istiqamətindədir (robot kimi). Hər səviyyənin öz görünüşü var.
+// Təkərlər sürəndə fırlanır, fırça valları həmişə fırlanır, işıqlı lampalar yanıb-sönür.
+
+// Maşın modeli üçün boş qrup düzəldir (hərəkətli hissələrin siyahıları ilə birlikdə)
+function newVehicleModel() {
+  const model = new THREE.Group();
+  model.userData.wheels = [];   // fırlanan təkərlər
+  model.userData.drums = [];    // fırlanan fırça vallar
+  model.userData.beacons = [];  // yanıb-sönən lampalar
+  return model;
+}
+
+// İstənilən formada hissə düzəldir (forma, rəng, yer, istəyə görə parıltı rəngi)
+function makePart(geometry, color, x, y, z, glowColor) {
+  const material = new THREE.MeshStandardMaterial({
+    color: color,
+    flatShading: true,
+    roughness: 0.6,
+    metalness: 0.2,
+  });
+  if (glowColor !== undefined) {
+    material.emissive = new THREE.Color(glowColor);
+  }
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
+  return mesh;
+}
+
+// Qutu şəklində hissə (en, hündürlük, dərinlik, rəng, yer, parıltı)
+function makeBlock(width, height, depth, color, x, y, z, glowColor) {
+  return makePart(new THREE.BoxGeometry(width, height, depth), color, x, y, z, glowColor);
+}
+
+// Şüşə hissə (yarı şəffaf); tilt: öndən yana əyilmə bucağı
+function makeGlass(width, height, depth, x, y, z, tilt) {
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x7dd3fc,
+    transparent: true,
+    opacity: 0.55,
+    roughness: 0.15,
+    metalness: 0.3,
+    emissive: 0x0c4a6e,
+  });
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+  mesh.position.set(x, y, z);
+  mesh.rotation.x = tilt;
+  return mesh;
+}
+
+// Yarım kürə şəklində şüşə günbəz (kabina üçün)
+function makeDome(scaleX, scaleY, scaleZ, color, glowColor, x, y, z) {
+  const material = new THREE.MeshStandardMaterial({
+    color: color,
+    transparent: true,
+    opacity: 0.6,
+    roughness: 0.1,
+    metalness: 0.3,
+    emissive: glowColor,
+  });
+  const geometry = new THREE.SphereGeometry(1, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.scale.set(scaleX, scaleY, scaleZ);
+  mesh.position.set(x, y, z);
+  return mesh;
+}
+
+// Təkər əlavə edir: qara şin, rəngli göbək və göbəkdə çubuq (fırlananda görünsün)
+function addWheel(model, radius, thickness, hubColor, x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  const tire = makePart(new THREE.CylinderGeometry(radius, radius, thickness, 16), 0x111827, 0, 0, 0);
+  tire.rotation.z = Math.PI / 2;
+  group.add(tire);
+
+  const hub = makePart(new THREE.CylinderGeometry(radius * 0.55, radius * 0.55, thickness + 0.04, 12), hubColor, 0, 0, 0);
+  hub.rotation.z = Math.PI / 2;
+  group.add(hub);
+
+  group.add(makeBlock(thickness + 0.07, radius * 0.9, radius * 0.18, 0x374151, 0, 0, 0));
+
+  model.add(group);
+  model.userData.wheels.push({ group: group, radius: radius });
+}
+
+// Fırça val əlavə edir: tüklü silindr, kənar lövhələr və üstündə qoruyucu örtük
+function addDrum(model, width, radius, z, bristleColor) {
+  const drum = new THREE.Group();
+  drum.position.set(0, radius + 0.03, z);
+
+  const core = makePart(new THREE.CylinderGeometry(radius * 0.55, radius * 0.55, width, 10), 0x4b5563, 0, 0, 0);
+  core.rotation.z = Math.PI / 2;
+  drum.add(core);
+
+  // Tük zolaqları valın ətrafında düzülür
+  const stripCount = 8;
+  for (let k = 0; k < stripCount; k++) {
+    const angle = (k * Math.PI * 2) / stripCount;
+    const strip = makeBlock(width * 0.98, radius * 0.55, 0.07, bristleColor, 0, Math.sin(angle) * radius * 0.78, Math.cos(angle) * radius * 0.78);
+    strip.rotation.x = Math.PI / 2 - angle;
+    drum.add(strip);
+  }
+
+  // Valın iki başındakı lövhələr
+  for (const side of [-1, 1]) {
+    const cap = makePart(new THREE.CylinderGeometry(radius * 0.98, radius * 0.98, 0.06, 16), 0x6b7280, side * (width / 2 + 0.02), 0, 0);
+    cap.rotation.z = Math.PI / 2;
+    drum.add(cap);
+  }
+
+  model.add(drum);
+  model.userData.drums.push(drum);
+
+  // Valın üstündəki örtük
+  model.add(makeBlock(width + 0.1, 0.08, radius * 1.6, 0x374151, 0, radius * 2 + 0.12, z - radius * 0.2));
+}
+
+// Yanıb-sönən xəbərdarlıq lampası əlavə edir
+function addBeacon(model, color, x, y, z) {
+  model.add(makeBlock(0.12, 0.08, 0.12, 0x1f2937, x, y - 0.08, z));
+  const lamp = makePart(new THREE.SphereGeometry(0.1, 10, 8), color, x, y, z, color);
+  model.add(lamp);
+  model.userData.beacons.push(lamp);
+}
+
+// İki fara əlavə edir
+function addHeadlights(model, spreadX, y, z) {
+  for (const side of [-1, 1]) {
+    model.add(makeBlock(0.2, 0.1, 0.06, 0xfef9c3, side * spreadX, y, z, 0xfef08a));
+  }
+}
+
+// 1. Skuter: narıncı kiçik maşın, arxada zibil qutusu, sükan, bir fırça val
+function buildVehicleScooter(tool) {
+  const model = newVehicleModel();
+
+  model.add(makeBlock(1.0, 0.2, 1.7, 0x374151, 0, 0.32, 0));
+  model.add(makeBlock(0.9, 0.35, 1.2, 0xf59e0b, 0, 0.58, 0.25));
+  model.add(makeBlock(0.8, 0.25, 0.4, 0xfbbf24, 0, 0.5, 0.95));
+  model.add(makeBlock(0.8, 0.4, 0.6, 0x9ca3af, 0, 0.62, -0.6));
+  model.add(makeBlock(0.84, 0.06, 0.64, 0x6b7280, 0, 0.85, -0.6));
+
+  // Oturacaq və arxalıq
+  model.add(makeBlock(0.55, 0.12, 0.45, 0x111827, 0, 0.82, -0.1));
+  model.add(makeBlock(0.5, 0.4, 0.08, 0x111827, 0, 1.05, -0.33));
+
+  // Sükan dirəyi və sükan
+  const column = makeBlock(0.05, 0.5, 0.05, 0x9ca3af, 0, 1.0, 0.45);
+  column.rotation.x = -0.5;
+  model.add(column);
+  model.add(makeBlock(0.45, 0.05, 0.05, 0x111827, 0, 1.22, 0.35));
+
+  addHeadlights(model, 0.3, 0.52, 1.17);
+  addBeacon(model, 0xf97316, 0.35, 1.25, -0.4);
+
+  addWheel(model, 0.25, 0.18, 0x9ca3af, 0.55, 0.25, 0.6);
+  addWheel(model, 0.25, 0.18, 0x9ca3af, -0.55, 0.25, 0.6);
+  addWheel(model, 0.25, 0.18, 0x9ca3af, 0.55, 0.25, -0.6);
+  addWheel(model, 0.25, 0.18, 0x9ca3af, -0.55, 0.25, -0.6);
+
+  // Fırça valının qolları və val
+  model.add(makeBlock(0.08, 0.08, 0.6, 0x374151, 0.45, 0.3, 1.0));
+  model.add(makeBlock(0.08, 0.08, 0.6, 0x374151, -0.45, 0.3, 1.0));
+  addDrum(model, tool.width, 0.2, tool.brushZ + 0.2, 0xffd34d);
+  return model;
+}
+
+// 2. Süpürgə yük maşını: mavi kabina, şüşələr, boz yük qutusu, işıqlar, mavi-sarı rənglər
+function buildVehicleTruck(tool) {
+  const model = newVehicleModel();
+
+  model.add(makeBlock(1.5, 0.25, 3.0, 0x1f2937, 0, 0.5, 0.1));
+
+  // Kabina və kapot
+  model.add(makeBlock(1.4, 0.7, 1.0, 0x2563eb, 0, 1.05, 0.75));
+  model.add(makeBlock(1.4, 0.4, 0.7, 0x1d4ed8, 0, 0.85, 1.5));
+  model.add(makeBlock(1.0, 0.04, 0.6, 0xfacc15, 0, 1.07, 1.5));
+  model.add(makeBlock(1.45, 0.08, 1.05, 0x1e3a8a, 0, 1.43, 0.75));
+  model.add(makeGlass(1.2, 0.45, 0.05, 0, 1.1, 1.27, -0.25));
+  model.add(makeGlass(0.05, 0.35, 0.7, 0.71, 1.12, 0.75, 0));
+  model.add(makeGlass(0.05, 0.35, 0.7, -0.71, 1.12, 0.75, 0));
+
+  // Radiator barmaqlığı, faralar, güzgülər
+  model.add(makeBlock(1.0, 0.2, 0.05, 0x111827, 0, 0.8, 1.87));
+  addHeadlights(model, 0.5, 0.92, 1.88);
+  model.add(makeBlock(0.08, 0.2, 0.1, 0x111827, 0.82, 1.2, 1.25));
+  model.add(makeBlock(0.08, 0.2, 0.1, 0x111827, -0.82, 1.2, 1.25));
+
+  // Arxadakı yük qutusu
+  model.add(makeBlock(1.4, 0.8, 1.5, 0x94a3b8, 0, 1.0, -0.7));
+  model.add(makeBlock(1.5, 0.1, 1.6, 0x64748b, 0, 1.45, -0.7));
+  model.add(makeBlock(1.42, 0.12, 1.5, 0xf97316, 0, 0.8, -0.7));
+
+  addBeacon(model, 0xfacc15, 0, 1.55, 0.5);
+
+  addWheel(model, 0.4, 0.3, 0xe5e7eb, 0.85, 0.4, 1.2);
+  addWheel(model, 0.4, 0.3, 0xe5e7eb, -0.85, 0.4, 1.2);
+  addWheel(model, 0.4, 0.3, 0xe5e7eb, 0.85, 0.4, -0.9);
+  addWheel(model, 0.4, 0.3, 0xe5e7eb, -0.85, 0.4, -0.9);
+
+  model.add(makeBlock(0.1, 0.1, 0.9, 0x374151, 0.6, 0.45, 1.75));
+  model.add(makeBlock(0.1, 0.1, 0.9, 0x374151, -0.6, 0.45, 1.75));
+  addDrum(model, tool.width, 0.3, tool.brushZ + 0.3, 0xfacc15);
+  return model;
+}
+
+// 3. Süpürgə traktoru: yaşıl gövdə, iri arxa təkərlər, şüşəli kabina, tüstü borusu, ön qollar
+function buildVehicleTractor(tool) {
+  const model = newVehicleModel();
+
+  // Kapot, mühərrik və stikerlər
+  model.add(makeBlock(1.3, 0.75, 1.6, 0x16a34a, 0, 1.0, 1.1));
+  model.add(makeBlock(1.0, 0.04, 1.4, 0xfacc15, 0, 1.39, 1.1));
+  model.add(makeBlock(1.0, 0.5, 0.06, 0x111827, 0, 1.0, 1.91));
+  model.add(makeBlock(1.2, 0.6, 1.2, 0x15803d, 0, 0.9, -0.2));
+  addHeadlights(model, 0.45, 1.25, 1.93);
+
+  // Kabina: dirəklər, şüşə, dam, oturacaq
+  const pillarX = [0.6, -0.6];
+  const pillarZ = [0.25, -0.95];
+  for (const px of pillarX) {
+    for (const pz of pillarZ) {
+      model.add(makeBlock(0.08, 1.0, 0.08, 0x14532d, px, 1.9, pz));
+    }
+  }
+  model.add(makeGlass(1.2, 0.8, 1.2, 0, 1.95, -0.35, 0));
+  model.add(makeBlock(1.4, 0.1, 1.4, 0x14532d, 0, 2.45, -0.35));
+  model.add(makeBlock(0.5, 0.4, 0.5, 0x111827, 0, 1.5, -0.5));
+
+  // Tüstü borusu
+  const pipe = makePart(new THREE.CylinderGeometry(0.06, 0.06, 0.9, 8), 0x1f2937, 0.45, 1.85, 1.4);
+  model.add(pipe);
+  model.add(makePart(new THREE.CylinderGeometry(0.09, 0.06, 0.08, 8), 0x111827, 0.45, 2.33, 1.4));
+
+  // Palçıqqoruyanlar və təkərlər
+  model.add(makeBlock(0.5, 0.1, 1.4, 0x15803d, 1.0, 1.65, -0.7));
+  model.add(makeBlock(0.5, 0.1, 1.4, 0x15803d, -1.0, 1.65, -0.7));
+  addWheel(model, 0.8, 0.45, 0xfacc15, 1.0, 0.8, -0.7);
+  addWheel(model, 0.8, 0.45, 0xfacc15, -1.0, 0.8, -0.7);
+  addWheel(model, 0.5, 0.3, 0xfacc15, 0.85, 0.5, 1.4);
+  addWheel(model, 0.5, 0.3, 0xfacc15, -0.85, 0.5, 1.4);
+
+  addBeacon(model, 0xf97316, 0, 2.58, -0.35);
+
+  // Fırça valını tutan ön qollar
+  model.add(makeBlock(0.14, 0.14, 1.6, 0x6b7280, 0.65, 0.7, 1.7));
+  model.add(makeBlock(0.14, 0.14, 1.6, 0x6b7280, -0.65, 0.7, 1.7));
+  addDrum(model, tool.width, 0.35, tool.brushZ + 0.25, 0xdc2626);
+  return model;
+}
+
+// 4. Ay vezdehodu: ağ gövdə, 6 təkər, şüşə günbəz, günəş panelləri, antena boşqabı
+function buildVehicleRover(tool) {
+  const model = newVehicleModel();
+
+  // Gövdə
+  model.add(makeBlock(1.8, 0.5, 3.2, 0xe5e7eb, 0, 0.95, 0));
+  model.add(makeBlock(1.5, 0.2, 3.0, 0x64748b, 0, 0.65, 0));
+  model.add(makeBlock(1.6, 0.08, 2.4, 0xcbd5e1, 0, 1.24, -0.1));
+  model.add(makeBlock(1.84, 0.12, 1.6, 0xf97316, 0, 0.95, 0));
+
+  // Şüşə günbəz kabina
+  model.add(makeDome(0.65, 0.5, 0.8, 0x22d3ee, 0x0e7490, 0, 1.28, 0.9));
+
+  // Günəş panelləri (şəbəkə xətləri ilə)
+  for (const side of [-1, 1]) {
+    const panel = new THREE.Group();
+    panel.position.set(side * 0.65, 1.5, -0.9);
+    panel.rotation.z = side * -0.3;
+    panel.add(makeBlock(1.0, 0.04, 1.3, 0x1e3a8a, 0, 0, 0, 0x1e40af));
+    panel.add(makeBlock(1.04, 0.05, 0.03, 0x93c5fd, 0, 0.01, -0.3));
+    panel.add(makeBlock(1.04, 0.05, 0.03, 0x93c5fd, 0, 0.01, 0.1));
+    panel.add(makeBlock(0.03, 0.05, 1.3, 0x93c5fd, 0, 0.01, 0));
+    model.add(panel);
+  }
+
+  // Antena boşqabı
+  model.add(makePart(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6), 0x94a3b8, -0.5, 1.5, 0.1));
+  const dish = makePart(new THREE.ConeGeometry(0.35, 0.22, 14), 0xf1f5f9, -0.5, 1.78, 0.1);
+  dish.rotation.x = -0.9;
+  model.add(dish);
+
+  // Projektorlar
+  for (const side of [-1, 1]) {
+    model.add(makeBlock(0.22, 0.12, 0.15, 0xfef9c3, side * 0.6, 1.05, 1.65, 0xfef08a));
+  }
+  addBeacon(model, 0x22d3ee, 0.5, 1.42, 0.1);
+
+  // 6 təkər və asqı qolları
+  const zList = [-1.1, 0, 1.1];
+  for (const wheelZ of zList) {
+    addWheel(model, 0.5, 0.4, 0x94a3b8, 1.15, 0.5, wheelZ);
+    addWheel(model, 0.5, 0.4, 0x94a3b8, -1.15, 0.5, wheelZ);
+    model.add(makeBlock(0.5, 0.1, 0.15, 0x475569, 0.95, 0.75, wheelZ));
+    model.add(makeBlock(0.5, 0.1, 0.15, 0x475569, -0.95, 0.75, wheelZ));
+  }
+
+  model.add(makeBlock(0.12, 0.12, 1.25, 0x64748b, 0.8, 0.55, 2.2));
+  model.add(makeBlock(0.12, 0.12, 1.25, 0x64748b, -0.8, 0.55, 2.2));
+  addDrum(model, tool.width, 0.4, tool.brushZ + 0.25, 0x22d3ee);
+  return model;
+}
+
+// 5. Super kombayn: tırtıllı tünd gövdə, parlayan firuzəyi zolaqlar, günbəz kabina, mühərrik alovu, iki fırça val
+function buildVehicleCombine(tool) {
+  const model = newVehicleModel();
+
+  // Tırtıllar və tırtıl təkərləri
+  for (const side of [-1, 1]) {
+    model.add(makeBlock(0.7, 0.55, 3.8, 0x111827, side * 1.25, 0.4, 0));
+    model.add(makeBlock(0.8, 0.1, 3.6, 0x1f2937, side * 1.25, 0.72, 0));
+    const trackZ = [-1.5, 0, 1.5];
+    for (const wheelZ of trackZ) {
+      addWheel(model, 0.35, 0.5, 0x6b7280, side * 1.25, 0.35, wheelZ);
+    }
+  }
+
+  // Gövdə
+  model.add(makeBlock(2.4, 0.8, 3.4, 0x1f2937, 0, 1.05, 0));
+  model.add(makeBlock(1.9, 0.4, 2.4, 0x111827, 0, 1.65, -0.2));
+  const wedge = makeBlock(2.0, 0.5, 0.8, 0x374151, 0, 0.95, 1.9);
+  wedge.rotation.x = 0.3;
+  model.add(wedge);
+
+  // Kabina
+  model.add(makeDome(1.0, 0.75, 1.25, 0x22d3ee, 0x0891b2, 0, 1.85, 0.5));
+  model.add(makeBlock(1.6, 0.1, 0.15, 0xffffff, 0, 2.0, 1.55, 0xffffff));
+
+  // Parlayan zolaqlar
+  model.add(makeBlock(2.42, 0.08, 0.08, 0x66ffcc, 0, 1.2, 1.2, 0x66ffcc));
+  model.add(makeBlock(0.06, 0.08, 3.0, 0x66ffcc, 1.22, 1.05, 0, 0x66ffcc));
+  model.add(makeBlock(0.06, 0.08, 3.0, 0x66ffcc, -1.22, 1.05, 0, 0x66ffcc));
+
+  // Arxada iki reaktiv mühərrik
+  for (const side of [-1, 1]) {
+    const engine = makePart(new THREE.CylinderGeometry(0.35, 0.4, 1.0, 12), 0x374151, side * 0.6, 1.2, -1.9);
+    engine.rotation.x = Math.PI / 2;
+    model.add(engine);
+    const flame = makePart(new THREE.CylinderGeometry(0.28, 0.28, 0.06, 12), 0xfb923c, side * 0.6, 1.2, -2.42, 0xfb923c);
+    flame.rotation.x = Math.PI / 2;
+    model.add(flame);
+  }
+
+  // Antenalar və lampa
+  model.add(makePart(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 6), 0x94a3b8, 0.9, 2.2, -1.0));
+  model.add(makePart(new THREE.CylinderGeometry(0.03, 0.03, 1.0, 6), 0x94a3b8, -0.9, 2.1, -1.0));
+  addBeacon(model, 0xf97316, 0, 2.15, -1.0);
+
+  // Ön qollar və iki fırça val
+  model.add(makeBlock(0.2, 0.2, 1.5, 0x374151, 1.1, 0.6, 2.55));
+  model.add(makeBlock(0.2, 0.2, 1.5, 0x374151, -1.1, 0.6, 2.55));
+  model.add(makeBlock(0.3, 0.3, 1.0, 0x374151, 0, 0.6, 2.7));
+  addDrum(model, tool.width * 0.8, 0.25, tool.brushZ - 0.35, 0x66ffcc);
+  addDrum(model, tool.width, 0.45, tool.brushZ + 0.25, 0xffffff);
+  return model;
+}
+
+// Səviyyəyə görə maşın modelləri (VEHICLE_LEVELS ardıcıllığı ilə eynidir)
+const VEHICLE_BUILDERS = [
+  buildVehicleScooter,
+  buildVehicleTruck,
+  buildVehicleTractor,
+  buildVehicleRover,
+  buildVehicleCombine,
+];
+
+// Maşın sistemini yaradır (maşın alınanda görünüşü özü düzəlir)
+function createVehicle(scene) {
+  const group = new THREE.Group();
+  group.visible = false;
+  scene.add(group);
+
+  return {
+    group: group,
+    model: null,
+    modelLevel: 0,      // hazırda göstərilən modelin səviyyəsi
+    driving: false,     // oyunçu maşını sürürmü
+    lastX: null,        // əvvəlki kadrdakı yer (süpürmə zolağını doldurmaq üçün)
+    lastZ: null,
+    pendingMoney: 0,    // hələ hesaba yazılmayan pul (1-ə çatanda yazılır)
+    button: null,       // telefondakı minmə düyməsi
+  };
+}
+
+// Maşının görünüşünü cari səviyyəyə uyğun dəyişir
+function syncVehicleModel(vehicle) {
+  const level = GameState.upgrades.vehicleLevel;
+  if (vehicle.modelLevel === level) { return; }
+
+  if (vehicle.model !== null) {
+    vehicle.group.remove(vehicle.model);
+    disposeModel(vehicle.model);
+    vehicle.model = null;
+  }
+
+  vehicle.modelLevel = level;
+  if (level < 1) { return; }
+
+  const tool = CONFIG.VEHICLE_LEVELS[level - 1];
+  vehicle.model = VEHICLE_BUILDERS[level - 1](tool);
+  vehicle.group.add(vehicle.model);
+}
+
+// Telefon üçün maşına minmə/düşmə düyməsi düzəldir
+function createVehicleButton(vehicle) {
+  const button = document.createElement('button');
+  button.id = 'vehicle-btn';
+  button.textContent = '🚜';
+  button.style.cssText =
+    'position:fixed; bottom:145px; right:40px; width:70px; height:70px; border-radius:50%;' +
+    'background:rgba(59,130,246,0.85); border:3px solid rgba(255,255,255,0.6); color:#fff;' +
+    'font-size:30px; line-height:1; z-index:20; touch-action:none; cursor:pointer; display:none;' +
+    'box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+
+  button.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    inputState.vehicleToggle = true;
+  });
+  button.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+
+  document.body.appendChild(button);
+  vehicle.button = button;
+}
+
+// Maşına minməyə çalışır (mümkün deyilsə səbəbini yazır)
+function tryStartDriving(vehicle, playerPos) {
+  if (GameState.upgrades.vehicleLevel < 1) {
+    return { ok: false, message: 'Maşının yoxdur. Bazada YENİLƏMƏ sahəsindən al' };
+  }
+  if (isNearBase(playerPos.x, playerPos.z, CONFIG.VEHICLE_BOARD_MARGIN)) {
+    return { ok: false, message: 'Minmək üçün bazadan bir az uzaqlaş' };
+  }
+  vehicle.driving = true;
+  vehicle.lastX = null;
+  vehicle.lastZ = null;
+  return { ok: true, message: 'Maşına mindin! 🚜' };
+}
+
+// Maşından düşür
+function stopDriving(vehicle) {
+  vehicle.driving = false;
+  vehicle.lastX = null;
+  vehicle.lastZ = null;
+  vehicle.group.visible = false;
+}
+
+// Maşının qazandığı pulu yığır; 1-ə çatanda hesaba yazır
+function payVehicle(vehicle, cleanedCells) {
+  vehicle.pendingMoney += cleanedCells * MONEY_PER_CELL;
+  GameState.totalDustCollected += cleanedCells * KG_PER_CELL;
+  if (vehicle.pendingMoney >= 1) {
+    const whole = Math.floor(vehicle.pendingMoney);
+    earnMoney(whole);
+    vehicle.pendingMoney -= whole;
+  }
+}
+
+// Maşının qabağındakı enli zolağı təmizləyir (zolaq kiçik kvadratlardan düzülür)
+function sweepVehicleStrip(dustSystem, tool, centerX, centerZ, heading) {
+  // Maşının sağ tərəfi
+  const rightX = -heading.z;
+  const rightZ = heading.x;
+
+  const square = CONFIG.VEHICLE_SWEEP_SQUARE;
+  const count = Math.max(1, Math.ceil(tool.width / (square * 0.5)));
+  const frontOffset = tool.brushZ + square * 0.5;
+  let cleanedCells = 0;
+
+  for (let k = 0; k <= count; k++) {
+    const offset = -tool.width / 2 + (tool.width * k) / count;
+    const squareX = centerX + heading.x * frontOffset + rightX * offset;
+    const squareZ = centerZ + heading.z * frontOffset + rightZ * offset;
+    cleanedCells += cleanSquare(dustSystem, squareX, squareZ, square);
+  }
+  return cleanedCells;
+}
+
+// Maşının hərəkətli hissələrini fırladır: təkərlər, fırça vallar, yanıb-sönən lampalar
+function animateVehicleParts(data, forwardMove, dt, time) {
+  for (const wheel of data.wheels) {
+    wheel.group.rotation.x += forwardMove / wheel.radius;
+  }
+  for (const drum of data.drums) {
+    drum.rotation.x += dt * 14;
+  }
+  const blink = 0.3 + 0.7 * Math.abs(Math.sin(time * 6));
+  for (const beacon of data.beacons) {
+    beacon.material.emissiveIntensity = blink;
+  }
+}
+
+// Hər kadrda: maşının şəklini yeniləyir və yolundakı tozu təmizləyir
+function updateVehicle(vehicle, dustSystem, playerPos, heading, dt, time) {
+  syncVehicleModel(vehicle);
+
+  // Telefondakı düymə yalnız maşın alınıbsa görünür
+  if (vehicle.button !== null) {
+    if (GameState.upgrades.vehicleLevel >= 1) {
+      vehicle.button.style.display = 'block';
+    } else {
+      vehicle.button.style.display = 'none';
+    }
+  }
+
+  vehicle.group.visible = vehicle.driving;
+  if (!vehicle.driving) { return; }
+
+  const tool = getVehicleTool();
+  vehicle.group.position.set(playerPos.x, 0, playerPos.z);
+  vehicle.group.rotation.y = Math.atan2(heading.x, heading.z);
+
+  const justStarted = vehicle.lastX === null;
+  if (justStarted) {
+    vehicle.lastX = playerPos.x;
+    vehicle.lastZ = playerPos.z;
+  }
+
+  const deltaX = playerPos.x - vehicle.lastX;
+  const deltaZ = playerPos.z - vehicle.lastZ;
+  const moved = Math.hypot(deltaX, deltaZ);
+  const forwardMove = deltaX * heading.x + deltaZ * heading.z;
+
+  if (vehicle.model !== null) {
+    animateVehicleParts(vehicle.model.userData, forwardMove, dt, time);
+  }
+
+  if (moved < 0.0001 && !justStarted) { return; }
+
+  // Əvvəlki yerdən indiki yerə qədər addım-addım təmizləyirik ki, boşluq qalmasın
+  const steps = Math.max(1, Math.ceil(moved / (CONFIG.VEHICLE_SWEEP_SQUARE * 0.3)));
+  let cleanedCells = 0;
+  for (let step = 1; step <= steps; step++) {
+    const t = step / steps;
+    const stepX = vehicle.lastX + deltaX * t;
+    const stepZ = vehicle.lastZ + deltaZ * t;
+    cleanedCells += sweepVehicleStrip(dustSystem, tool, stepX, stepZ, heading);
+  }
+
+  if (cleanedCells > 0) {
+    payVehicle(vehicle, cleanedCells);
+  }
+
+  vehicle.lastX = playerPos.x;
+  vehicle.lastZ = playerPos.z;
+}
+
+// ===================================================================
+// ===== İŞÇİLƏR (worker.js) =====
+// ===================================================================
+// İşçilər əlində süpürgə tutan adamlardır. Robotlar kimi parça-parça gəzib süpürürlər.
+// Yeriyəndə ayaqları yellənir, süpürəndə bədənləri sağa-sola burulur.
+
+// İşçinin görünüşünü düzəldir: ayaqlar, gövdə, baş, dəbilqə, qollar və əlində süpürgə
+function buildWorkerModel(tool) {
+  const model = new THREE.Group();
+  model.userData.legs = [];
+  model.userData.upper = null;
+
+  // Ayaqlar (kalçadan yellənir)
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Group();
+    leg.position.set(side * 0.12, 0.8, 0);
+    leg.add(makeBlock(0.16, 0.8, 0.18, tool.pantsColor, 0, -0.4, 0));
+    leg.add(makeBlock(0.18, 0.08, 0.28, 0x111827, 0, -0.78, 0.05));
+    model.add(leg);
+    model.userData.legs.push(leg);
+  }
+
+  // Yuxarı hissə: gövdə, baş, qollar və süpürgə birlikdə burulur
+  const upper = new THREE.Group();
+  model.add(upper);
+  model.userData.upper = upper;
+
+  // Gövdə və parlaq zolaq
+  upper.add(makeBlock(0.45, 0.55, 0.25, tool.shirtColor, 0, 1.08, 0));
+  upper.add(makeBlock(0.47, 0.07, 0.27, 0xfacc15, 0, 1.0, 0, 0x854d0e));
+
+  // Baş, gözlər və dəbilqə
+  upper.add(makePart(new THREE.SphereGeometry(0.17, 12, 10), 0xf1c27d, 0, 1.55, 0));
+  upper.add(makeBlock(0.04, 0.04, 0.03, 0x111827, 0.06, 1.57, 0.16));
+  upper.add(makeBlock(0.04, 0.04, 0.03, 0x111827, -0.06, 1.57, 0.16));
+  upper.add(makePart(new THREE.CylinderGeometry(0.19, 0.2, 0.12, 12), tool.hatColor, 0, 1.7, 0));
+  upper.add(makeBlock(0.34, 0.03, 0.12, tool.hatColor, 0, 1.65, 0.16));
+
+  // Qollar: irəli uzanıb süpürgənin sapını tutur
+  for (const side of [-1, 1]) {
+    const arm = new THREE.Group();
+    arm.position.set(side * 0.28, 1.3, 0);
+    arm.rotation.x = -0.95;
+    arm.rotation.z = -side * 0.43;
+    arm.add(makeBlock(0.11, 0.55, 0.11, tool.shirtColor, 0, -0.27, 0));
+    arm.add(makeBlock(0.1, 0.1, 0.1, 0xf1c27d, 0, -0.57, 0));
+    upper.add(arm);
+  }
+
+  // Süpürgə: sap və tük hissəsi (eni işçinin təmizləmə eninə bərabərdir)
+  const handle = makeBlock(0.04, 1.1, 0.04, 0x9c6b3a, 0, 0.525, 0.725);
+  handle.rotation.x = -0.44;
+  upper.add(handle);
+  upper.add(makeBlock(tool.size, 0.1, 0.16, 0xe0b84a, 0, 0.06, 0.95));
+  upper.add(makeBlock(tool.size, 0.05, 0.12, 0x92400e, 0, 0.14, 0.95));
+
+  return model;
+}
+
+// İşçilər sistemini yaradır (işçilər alınanda özləri əlavə olunur)
+function createWorkers(scene) {
+  return { scene: scene, workers: [] };
+}
+
+// Yeni işçi düzəldir və bazanın qapısının qarşısına qoyur
+function createOneWorker(system, number) {
+  const group = new THREE.Group();
+  system.scene.add(group);
+
+  return {
+    group: group,
+    model: null,
+    modelLevel: 0,         // hazırda göstərilən görünüşün səviyyəsi
+    x: CONFIG.BASE_X + (number - 2) * 1.3 + 0.65,
+    z: CONFIG.BASE_Z + CONFIG.BASE_DEPTH / 2 + 5,
+    chunkIndex: -1,        // hazırda təmizlədiyi parça (-1 = yoxdur)
+    lastChunkIndex: -1,    // ən son bitirdiyi parça
+    waypoints: [],         // parçanın içindəki yol nöqtələri
+    waypointIndex: 0,
+    waitTime: 0,
+    pendingMoney: 0,       // hələ hesaba yazılmayan pul (1-ə çatanda yazılır)
+    phase: number * 1.7,   // yeriş və süpürmə hərəkətinin fazası
+  };
+}
+
+// İşçinin görünüşünü cari səviyyəyə uyğun dəyişir
+function syncWorkerModel(worker) {
+  const level = GameState.upgrades.workerLevel;
+  if (worker.modelLevel === level) { return; }
+
+  if (worker.model !== null) {
+    worker.group.remove(worker.model);
+    disposeModel(worker.model);
+    worker.model = null;
+  }
+
+  worker.modelLevel = level;
+  worker.model = buildWorkerModel(CONFIG.WORKER_LEVELS[level - 1]);
+  worker.group.add(worker.model);
+}
+
+// İşçinin ayaqlarını yelləyir və süpürərkən bədənini burur
+function animateWorker(worker, movedDistance, isWorking, time) {
+  const data = worker.model.userData;
+  worker.phase += movedDistance * 5;
+
+  let swing = 0;
+  if (movedDistance > 0.0001) {
+    swing = 0.7;
+  }
+  data.legs[0].rotation.x = Math.sin(worker.phase) * swing;
+  data.legs[1].rotation.x = -Math.sin(worker.phase) * swing;
+
+  if (isWorking) {
+    data.upper.rotation.y = Math.sin(time * 5 + worker.phase * 0.3) * 0.35;
+    data.upper.position.y = Math.abs(Math.sin(worker.phase)) * 0.03;
+  } else {
+    data.upper.rotation.y = 0;
+    data.upper.position.y = 0;
+  }
+}
+
+// Bir işçinin hər kadrdakı işi: parça seç, onu tam süpür, sonra başqasına keç
+function updateOneWorker(system, robots, worker, dustSystem, playerPos, dt, time) {
+  const tool = getWorkerTool();
+  syncWorkerModel(worker);
+
+  // Parça artıq bitibsə və ya yol qurtarıbsa, yenisinə keçirik
+  if (worker.chunkIndex !== -1) {
+    const chunkIsDone = dustSystem.chunkDone[worker.chunkIndex] === 1;
+    const routeIsOver = worker.waypointIndex >= worker.waypoints.length;
+    if (chunkIsDone || routeIsOver) {
+      worker.lastChunkIndex = worker.chunkIndex;
+      worker.chunkIndex = -1;
+    }
+  }
+
+  // Yeni parça seçirik (digər işçilərin və robotların seçdiyi parçaları keçirik)
+  if (worker.chunkIndex === -1) {
+    if (worker.waitTime > 0) {
+      worker.waitTime -= dt;
+    } else {
+      const claimSystem = { robots: system.workers.concat(robots.robots) };
+      const found = pickChunk(claimSystem, worker, dustSystem);
+      if (found === -1) {
+        worker.waitTime = 2;
+      } else {
+        worker.chunkIndex = found;
+        worker.waypoints = buildWaypoints(found, tool.size);
+        worker.waypointIndex = 0;
+      }
+    }
+  }
+
+  const beforeX = worker.x;
+  const beforeZ = worker.z;
+  if (worker.chunkIndex !== -1) {
+    driveRobot(worker, dustSystem, tool, dt);
+  }
+  const moved = Math.hypot(wrapDelta(worker.x - beforeX), wrapDelta(worker.z - beforeZ));
+
+  placeRobot(worker, playerPos);
+  animateWorker(worker, moved, worker.chunkIndex !== -1, time);
+}
+
+// Hər kadrda: alınmış işçilərin sayı qədər işçi yaradılır və hamısı işləyir
+function updateWorkers(system, robots, dustSystem, playerPos, dt, time) {
+  while (system.workers.length < GameState.upgrades.workerCount) {
+    system.workers.push(createOneWorker(system, system.workers.length));
+  }
+
+  for (const worker of system.workers) {
+    updateOneWorker(system, robots, worker, dustSystem, playerPos, dt, time);
+  }
+}
+
+// ===================================================================
 // ===== XƏRİTƏ (minimap.js) =====
 // ===================================================================
 
@@ -1766,6 +2648,7 @@ const inputState = {
   cameraYaw: 0,
   cameraPitch: 0,
   actionPressed: false,
+  vehicleToggle: false,   // maşına min / maşından düş düyməsi basılıb (bir dəfəlik)
 };
 
 // Seçilmiş cihaza görə idarəetməni qoşur: 'pc' = klaviatura və siçan, 'phone' = toxunuş
@@ -1896,9 +2779,15 @@ const BUY_BUTTONS = {
   Numpad3: 'shop-buy-robotModel',
   Digit4: 'shop-buy-robotCount',
   Numpad4: 'shop-buy-robotCount',
+  Digit5: 'shop-buy-vehicle',
+  Numpad5: 'shop-buy-vehicle',
+  Digit6: 'shop-buy-workerLevel',
+  Numpad6: 'shop-buy-workerLevel',
+  Digit7: 'shop-buy-workerCount',
+  Numpad7: 'shop-buy-workerCount',
 };
 
-// Kompüter idarəsi: WASD/oxlar, siçan baxışı, sol klik və ya Boşluq, 1/2/3/4 (yeniləmə paneli)
+// Kompüter idarəsi: WASD/oxlar, siçan baxışı, sol klik və ya Boşluq, E (maşın), 1-7 (yeniləmə paneli)
 function setupKeyboardControls(inputState) {
   const container = document.getElementById('game-container');
   const hint = document.getElementById('pc-hint');
@@ -1932,7 +2821,7 @@ function setupKeyboardControls(inputState) {
   // Ekranın altındakı köməkçi yazı
   function updateHint() {
     if (isLocked()) {
-      hint.textContent = 'WASD: yeriş · Siçan: baxış · Sol klik / Boşluq: təmizlə · 1/2/3/4: yenilə · Esc: siçanı burax';
+      hint.textContent = 'WASD: yeriş · Siçan: baxış · Sol klik / Boşluq: təmizlə · E: maşına min / düş · 1-7: yenilə · Esc: siçanı burax';
     } else {
       hint.textContent = 'Başlamaq üçün oyuna klikləyin';
     }
@@ -1964,6 +2853,14 @@ function setupKeyboardControls(inputState) {
       e.preventDefault();
       spaceDown = true;
       updateAction();
+      return;
+    }
+
+    // E düyməsi: maşına min / maşından düş
+    if (e.code === 'KeyE') {
+      if (!e.repeat) {
+        inputState.vehicleToggle = true;
+      }
       return;
     }
 
@@ -2056,6 +2953,7 @@ document.getElementById('version-tag').textContent = CONFIG.VERSION;
 // Oyunu seçilmiş cihaza ('phone' və ya 'pc') görə işə salır
 function startGame(device) {
   loadGame();
+  GameState.money = 100000; // TEST: başlanğıc pul (testdən sonra bu sətri sil)
   applyUpgrades();
 
   const container = document.getElementById('game-container');
@@ -2064,7 +2962,7 @@ function startGame(device) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 2000);
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 100);
   const world = createWorld();
   world.scene.add(camera);
 
@@ -2073,8 +2971,14 @@ function startGame(device) {
   const minimap = createMinimap();
   const base = createBase(world.scene);
   const robots = createRobots(world.scene);
+  const vehicle = createVehicle(world.scene);
+  const workers = createWorkers(world.scene);
+  robots.otherUnits = workers.workers;
 
   setupControls(device);
+  if (device === 'phone') {
+    createVehicleButton(vehicle);
+  }
   updateHUD();
   startAutoSave();
 
@@ -2106,11 +3010,59 @@ function startGame(device) {
     return hitPoint;
   }
 
+  // Maşına min / düş düyməsi basılıbsa, onu icra edir
+  function handleVehicleToggle() {
+    if (!inputState.vehicleToggle) { return; }
+    inputState.vehicleToggle = false;
+
+    if (vehicle.driving) {
+      stopDriving(vehicle);
+      showToast('Maşından düşdün');
+      return;
+    }
+
+    const result = tryStartDriving(vehicle, playerPos);
+    showToast(result.message);
+    if (result.ok) {
+      // Maşın sürəndə kamera bir az aşağı baxsın ki, qabaqdakı yer görünsün
+      currentPitch = -0.3;
+    }
+  }
+
+  // Maşın bazaya çox yaxınlaşıbsa, özü düşür (divarlardan keçə bilməz)
+  function checkVehicleNearBase() {
+    if (!vehicle.driving) { return; }
+    if (isNearBase(playerPos.x, playerPos.z, CONFIG.VEHICLE_LEAVE_MARGIN)) {
+      stopDriving(vehicle);
+      showToast('Bazaya çatdın, maşından düşdün');
+    }
+  }
+
+  // Maşın sürəndə hərəkət: A/D döndərir, W/S irəli-geri aparır
+  function moveVehicle(dt) {
+    const tool = getVehicleTool();
+    const turn = inputState.joystick.x;
+    if (Math.abs(turn) > 0.05) {
+      heading.applyAxisAngle(upVec, -turn * CONFIG.VEHICLE_TURN_SPEED * dt);
+    }
+
+    const forward = inputState.joystick.y;
+    if (Math.abs(forward) > 0.05) {
+      let speed = tool.speed;
+      if (forward < 0) {
+        speed = tool.speed * CONFIG.VEHICLE_REVERSE_FACTOR;
+      }
+      playerPos.addScaledVector(heading, forward * speed * dt);
+    }
+  }
+
   // Hər kadrda işləyən əsas dövr
   function animate() {
     requestAnimationFrame(animate);
     const dt = Math.min(clock.getDelta(), 0.1);
     const nowMs = performance.now();
+
+    handleVehicleToggle();
 
     if (inputState.cameraYaw !== 0) {
       heading.applyAxisAngle(upVec, -inputState.cameraYaw);
@@ -2124,23 +3076,41 @@ function startGame(device) {
       inputState.cameraPitch = 0;
     }
 
+    if (vehicle.driving) {
+      moveVehicle(dt);
+    } else {
+      heading.y = 0;
+      heading.normalize();
+      rightVec.crossVectors(heading, upVec).normalize();
+
+      moveVec.set(0, 0, 0);
+      moveVec.addScaledVector(heading, inputState.joystick.y);
+      moveVec.addScaledVector(rightVec, inputState.joystick.x);
+
+      if (moveVec.lengthSq() > 0.01) {
+        moveVec.normalize();
+        playerPos.addScaledVector(moveVec, CONFIG.PLAYER_SPEED * dt);
+      }
+    }
+
     heading.y = 0;
     heading.normalize();
-    rightVec.crossVectors(heading, upVec).normalize();
-
-    moveVec.set(0, 0, 0);
-    moveVec.addScaledVector(heading, inputState.joystick.y);
-    moveVec.addScaledVector(rightVec, inputState.joystick.x);
-
-    if (moveVec.lengthSq() > 0.01) {
-      moveVec.normalize();
-      playerPos.addScaledVector(moveVec, CONFIG.PLAYER_SPEED * dt);
-    }
 
     // Bazanın divarlarından keçməsin
     pushOutOfBase(playerPos);
+    checkVehicleNearBase();
 
-    camera.position.set(playerPos.x, playerPos.y + CONFIG.CAMERA_HEIGHT, playerPos.z);
+    // Kamera: maşın sürəndə arxadan və yuxarıdan, yoxsa oyunçunun gözündən
+    const drivingTool = vehicle.driving ? getVehicleTool() : null;
+    if (drivingTool !== null) {
+      camera.position.set(
+        playerPos.x - heading.x * drivingTool.camBack,
+        drivingTool.camHeight,
+        playerPos.z - heading.z * drivingTool.camBack
+      );
+    } else {
+      camera.position.set(playerPos.x, playerPos.y + CONFIG.CAMERA_HEIGHT, playerPos.z);
+    }
     camera.up.set(0, 1, 0);
 
     lookDir.copy(heading).multiplyScalar(Math.cos(currentPitch)).addScaledVector(upVec, Math.sin(currentPitch));
@@ -2148,11 +3118,19 @@ function startGame(device) {
 
     updateWorld(world, playerPos);
     updateDustWindow(dustSystem, playerPos, nowMs);
-    updateBrush(brushGroup, inputState.actionPressed, dt, clock.elapsedTime);
 
-    const hit = findGroundHit();
-    updateDustSystem(dustSystem, hit, inputState.actionPressed);
+    // Maşın sürəndə əldəki fırça görünmür və əl ilə təmizləmə işləmir
+    brushGroup.visible = !vehicle.driving;
+    updateBrush(brushGroup, inputState.actionPressed && !vehicle.driving, dt, clock.elapsedTime);
+
+    let hit = null;
+    if (!vehicle.driving) {
+      hit = findGroundHit();
+    }
+    updateDustSystem(dustSystem, hit, inputState.actionPressed && !vehicle.driving);
+    updateVehicle(vehicle, dustSystem, playerPos, heading, dt, clock.elapsedTime);
     updateRobots(robots, dustSystem, playerPos, dt);
+    updateWorkers(workers, robots, dustSystem, playerPos, dt, clock.elapsedTime);
     updateBase(base, playerPos);
     updateMinimap(minimap, dustSystem, playerPos, heading, nowMs);
 
